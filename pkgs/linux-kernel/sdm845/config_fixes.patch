@@ -1,0 +1,28 @@
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 7d32fca64996..49307428e89c 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -1402,8 +1402,9 @@ CONFIG_MTK_SVS=m
+ CONFIG_QCOM_AOSS_QMP=y
+ CONFIG_QCOM_COMMAND_DB=y
+ CONFIG_QCOM_GENI_SE=y
+-CONFIG_QCOM_LLCC=m
+-CONFIG_QCOM_OCMEM=m
++CONFIG_QCOM_LLCC=y
++CONFIG_QCOM_OCMEM=y
++CONFIG_BACKLIGHT_CLASS_DEVICE=y
+ CONFIG_QCOM_PMIC_GLINK=m
+ CONFIG_QCOM_RMTFS_MEM=m
+ CONFIG_QCOM_RPMH=y
+diff --git a/drivers/remoteproc/Kconfig b/drivers/remoteproc/Kconfig
+index dda2ada215b7..d4822991110f 100644
+--- a/drivers/remoteproc/Kconfig
++++ b/drivers/remoteproc/Kconfig
+@@ -166,6 +166,7 @@ config QCOM_PIL_INFO
+
+ config QCOM_RPROC_COMMON
+ 	tristate
++	default y
+ 	select AUXILIARY_BUS
+
+ config QCOM_Q6V5_COMMON

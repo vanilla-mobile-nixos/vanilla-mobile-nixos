@@ -1,0 +1,15 @@
+./lib/firmware/tas2559_uCDSP.bin
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/adsp.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/a630_zap.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/cdsp.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/ipa_fws.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/mba.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/modem.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/slpi.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/venus.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/wlanmdsp.mbn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/adspr.jsn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/adspua.jsn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/cdspr.jsn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/modemr.jsn
+./lib/firmware/qcom/sdm845/Xiaomi/beryllium/modemuw.jsn
