@@ -1,3 +1,7 @@
+# See <https://gitlab.postmarketos.org/tauchgang/tauchgang-ci/-/blob/main/devices.toml>
+# for the information needed to add most new devices.
+# Reference <https://gitlab.postmarketos.org/tauchgang/tauchgang-ci/-/blob/main/common.sh>
+# if a new image building utility needs to be made.
 {
   lib,
   ubootUtils,
@@ -15,6 +19,14 @@ in
     defconfig = "qcom_defconfig qcom-phone.config";
   };
   xiaomi-beryllium-tianma-boot-image = mkAndroidBootImage {
+    uboot = ubootPackages.xiaomi-beryllium-tianma;
+  };
+  xiaomi-beryllium-ebbg = buildTauchgangUBoot {
+    pname = "xiaomi-beryllium-ebbg";
+    dtb = "qcom/sdm845-xiaomi-beryllium-ebbg";
+    defconfig = "qcom_defconfig qcom-phone.config";
+  };
+  xiaomi-beryllium-ebbg-boot-image = mkAndroidBootImage {
     uboot = ubootPackages.xiaomi-beryllium-tianma;
   };
 

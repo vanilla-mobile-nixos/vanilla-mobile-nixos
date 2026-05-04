@@ -8,9 +8,10 @@ USB cables/ports. Plugging into a multi-port external USB hub has worked for me.
 
 ## Prep Work
 
-Note down your device's touchscreen variant. You can find this out by following [these](https://wiki.postmarketos.org/wiki/Xiaomi_POCO_F1_(xiaomi-beryllium)#Know_your_touchscreen_variant) instructions.
-
-Update your device's firmware following [these](https://wiki.lineageos.org/devices/beryllium/fw_update) instructions.
+- Your device's bootloader needs to be unlocked. If it's unlocked, it will say so during
+  the boot process. To unlock the bootloader, follow [these](https://wiki.lineageos.org/devices/beryllium/install/#unlocking-the-bootloader) instructions.
+- Note down your device's touchscreen variant. You can find this out by following [these](https://wiki.postmarketos.org/wiki/Xiaomi_POCO_F1_(xiaomi-beryllium)#Know_your_touchscreen_variant) instructions.
+- Update your device's firmware following [these](https://wiki.lineageos.org/devices/beryllium/fw_update) instructions.
 
 ## Add
 
@@ -19,8 +20,12 @@ Update your device's firmware following [these](https://wiki.lineageos.org/devic
 U-Boot is what will create a UEFI boot environment compatible with standard tools like systemd-boot.
 It will be flashed to your devices `boot` partition.
 
-- Build the U-Boot boot image: `nix-build -A packagesCross.aarch64-multiplatform.ubootPackages.xiaomi-beryllium-tianma-boot-image`
+- Build the U-Boot boot image. Which image to use depends on which display panel your phone has:
+  - EBBG: `nix-build -A packagesCross.aarch64-multiplatform.ubootPackages.xiaomi-beryllium-ebbg-boot-image`
+  - Tianma: `nix-build -A packagesCross.aarch64-multiplatform.ubootPackages.xiaomi-beryllium-tianma-boot-image`
+- Go into fastboot mode on the phone.
 - Flash u-boot to the phone: `fastboot erase dtbo erase boot flash boot result/u-boot.img`
+- Run `fastboot reboot`. Do not reboot manually.
 
 ## Flash Your Installer Image
 

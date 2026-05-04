@@ -21,9 +21,10 @@ looking at the [postmarketOS Wiki](https://wiki.postmarketos.org/wiki/Devices) a
 list of devices supported by Tauchgang U-Boot.
 
 Tested Devices:
-- [Xiaomi POCO F1 (xiaomi-beryllium)](devices/xiaomi-beryllium/README.md)
+- [Xiaomi POCO F1 Tianma (xiaomi-beryllium)](docs/xiaomi-beryllium.md)
 
 Implemented but untested:
+- Xiaomi POCO F1 EBBG
 - SDM845 kernel with non-beryllium devices.
   - OnePlus 6 (oneplus-enchilada)
   - OnePlus 6T 	(oneplus-fajita)

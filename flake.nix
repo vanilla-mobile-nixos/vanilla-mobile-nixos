@@ -1,4 +1,6 @@
 {
+  description = "Run standard NixOS on your mobile devices!";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
