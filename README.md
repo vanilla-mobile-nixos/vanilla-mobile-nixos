@@ -41,7 +41,8 @@ The first choice is what desktop environment to use.
 ### Desktop Environments
 
 See [here](https://wiki.postmarketos.org/wiki/Category:Interface#Mobile_phones) for an
-overview of what mobile specific desktop environments are available. If you lean more
+overview of what mobile specific desktop environments are available. I haven't tested
+them on NixOS. If you lean more
 towards standalone compositors or want to keep what you use on Desktop, don't worry!
 It's surprisingly easy to get them working well. All it really takes are a few gestures
 and an on-screen keyboard.
@@ -49,7 +50,7 @@ and an on-screen keyboard.
 #### Sway and River
 
 There's a project called Sxmo or Simple X Mobile dedicated to making these compositors
-work well on mobile. You can also do it yourself similar to what I do for
+work well on mobile. I haven't tested it. You can also do it yourself similar to what I do for
 Hyprland.
 
 #### Hyprland
@@ -59,14 +60,14 @@ Hyprland.
 
 #### Niri
 
-Promising. Not tested yet.
+Promising for mobile. Good NixOS support. Have not tested yet.
 
 - Auto Rotation: [iio-niri](https://github.com/Zhaith-Izaliel/iio-niri)
 
 #### Catacomb
 
 A Wayland compositor made specifically for smart phones. Gestures and window
-management for free.
+management for free. No NixOS support or testing yet.
 
 ### General Software
 
