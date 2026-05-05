@@ -15,6 +15,7 @@ in
   xiaomi-beryllium-firmware = callPackage ./xiaomi-beryllium-firmware { };
 
   bootmac = callPackage ./bootmac { };
+  hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
   msm-modem = callPackage ./msm-modem { };
   swclock-offset = callPackage ./swclock-offset { };
 }

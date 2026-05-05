@@ -35,6 +35,9 @@ in
 
     vanilla-mobile.soc.sdm845.enable = true;
 
+    # Link `/share` into environment for hexagonrpcd.
+    environment.systemPackages = [ vanilla-mobile-pkgs.xiaomi-beryllium-firmware ];
+
     hardware = {
       firmware = lib.mkAfter [ vanilla-mobile-pkgs.xiaomi-beryllium-firmware ];
       deviceTree = {
@@ -83,5 +86,13 @@ in
             ];
       };
     };
+
+    services.udev.extraRules = ''
+      # Accelerometer mount matrix for iio-sensor-proxy. This shouldn't be needed any more
+      # due to the Beryllium firmware patch, but `/sys/bus/iio/devices/iio:deviceX/in_accel_mount_matrix`
+      # isn't populating.
+      SUBSYSTEM=="misc", KERNEL=="fastrpc-*", ENV{ACCEL_MOUNT_MATRIX}+="-1, 0, 0; 0, -1, 0; 0, 0, -1"
+    '';
   };
+
 }

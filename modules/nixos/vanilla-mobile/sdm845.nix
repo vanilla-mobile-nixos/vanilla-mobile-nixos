@@ -44,12 +44,18 @@ in
       };
       blacklistedKernelModules = [
         # Booting will fail if IPA loads before firmware is available.
-        # It also might cause holdups on shutdown, but I can't remember
-        # for sure if it was this.
+        # IPA also causes issues during shutdown, so it is not loaded
+        # after boot.
         "ipa"
       ];
 
-      loader.efi.canTouchEfiVariables = false;
+      loader = {
+        efi.canTouchEfiVariables = false;
+
+        # Currently only tested on systemd-boot.
+        grub.enable = lib.mkDefault false;
+        systemd-boot.enable = lib.mkDefault true;
+      };
     };
 
     # Modem
@@ -64,5 +70,9 @@ in
 
     # These devices don't have a writable RTC.
     services.swclock-offset.enable = true;
+
+    # Sensors
+    services.hexagonrpcd.sdsp.enable = true;
+    hardware.sensor.iio.enable = true;
   };
 }

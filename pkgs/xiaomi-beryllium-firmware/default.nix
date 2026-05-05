@@ -31,14 +31,12 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
 
     while IFS="" read -r _i || [ -n "$_i" ]; do
-      [ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
       install -Dm644 "$_i" "$out/$_i"
     done < "${./firmware.files}"
 
     # Files to be included to add sensor support.
     while IFS="" read -r _i || [ -n "$_i" ]; do
-      [ ! -d $(dirname $_i) ] && mkdir -p $(dirname $_i)
-      install -Dm644 "$_i" "$out/$_i"
+      install -Dm644 "$_i" "$out/''${_i#"./usr"}"
     done < "${./sensor.files}"
 
     runHook postInstall

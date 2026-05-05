@@ -16,5 +16,10 @@ in
   config = lib.mkIf cfg.enable {
     systemd.packages = [ cfg.package ];
     systemd.services.rmtfs.wantedBy = [ "multi-user.target" ];
+
+    # I'm not sure what uses this, but PostMarketOS includes it.
+    services.udev.extraRules = ''
+      SUBSYSTEM=="uio", ATTR{name}=="rmtfs", SYMLINK+="qcom_rmtfs_uio1"
+    '';
   };
 }
