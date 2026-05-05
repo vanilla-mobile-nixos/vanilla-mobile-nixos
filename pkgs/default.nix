@@ -15,5 +15,6 @@ in
   xiaomi-beryllium-firmware = callPackage ./xiaomi-beryllium-firmware { };
 
   bootmac = callPackage ./bootmac { };
+  msm-modem = callPackage ./msm-modem { };
   swclock-offset = callPackage ./swclock-offset { };
 }

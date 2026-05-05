@@ -7,6 +7,7 @@ self:
 }:
 let
   vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
+
   cfg = config.services.bootmac;
 in
 {
