@@ -6,14 +6,14 @@ These instructions require `fastboot`. You can access it with `nix-shell -p andr
 If you have trouble getting some `fastboot` commands to work, you may need to try other
 USB cables/ports. Plugging into a multi-port external USB hub has worked for me.
 
-## Prep Work
+### Prep Work
 
 - Your device's bootloader needs to be unlocked. If it's unlocked, it will say so during
   the boot process. To unlock the bootloader, follow [these](https://wiki.lineageos.org/devices/beryllium/install/#unlocking-the-bootloader) instructions.
 - Note down your device's touchscreen variant. You can find this out by following [these](https://wiki.postmarketos.org/wiki/Xiaomi_POCO_F1_(xiaomi-beryllium)#Know_your_touchscreen_variant) instructions.
 - Update your device's firmware following [these](https://wiki.lineageos.org/devices/beryllium/fw_update) instructions.
 
-## Add
+### Add the phone to your NixOS configuration
 
 ### U-Boot
 
@@ -27,7 +27,7 @@ It will be flashed to your devices `boot` partition.
 - Flash u-boot to the phone: `fastboot erase dtbo erase boot flash boot result/u-boot.img`
 - Run `fastboot reboot`. Do not reboot manually.
 
-## Flash Your Installer Image
+### Flash your installer image
 
 - Get the images builder script: `nix build .#nixosConfigurations.beryllium-installer.config.system.build.diskoImagesScript`
 - Build the NixOS boot and root images: `./result --pre-format-files (read -s -P "LUKS Password: " | psub) /tmp/nixos-root.key`
@@ -36,11 +36,19 @@ It will be flashed to your devices `boot` partition.
 - Flash the NixOS root image to the phone's userdata partition: `fastboot erase userdata flash userdata nixos-root.raw`
 - Reboot the phone with `fastboot reboot`. It may take a while. DO NOT manually reboot or interrupt the command.
 
-## SSH Access
+### SSH Access
 
 - `nix build .#nixosConfigurations.beryllium-installer.config.system.build.installerSSHWrapper -o installerSSHWrapper`
 
-## Installation
+### Installation
+
 - Build the system and add it to the device's bootloader: `NIX_SSHOPTS="$(cat installerSSHWrapper/bin/ssh-opts)" nixos-rebuild boot --flake .#<HOST_NAME> --target-host "root@<IP_ADDRESS>"`
 - Reboot into the system!
+
+## Troubleshooting
+
+- Trouble connecting to WiFi?
+  - See [here](https://wiki.postmarketos.org/wiki/Xiaomi_POCO_F1_(xiaomi-beryllium)#WiFi) for common causes.
+    The 5Gz issue, can be fixed in declarative Nix NetworkManager configurations
+    with `ensureProfiles.profiles.<PROFILE>.wifi.band = "bg";`.
 
