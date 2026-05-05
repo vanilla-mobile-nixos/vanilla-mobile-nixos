@@ -13,4 +13,10 @@ self:
     "" # Ignore original ExecStart
     "${pkgs.modemmanager}/bin/ModemManager --test-quick-suspend-resume"
   ];
+
+  # People typically have single presses toggle the display/suspend, not a full poweroff.
+  services.logind.settings = {
+    Login.HandlePowerKey = lib.mkDefault "ignore";
+    Login.HandlePowerKeyLongPress = lib.mkDeafult "poweroff";
+  };
 }
