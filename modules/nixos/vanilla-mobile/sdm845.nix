@@ -18,6 +18,10 @@ in
   config = lib.mkIf cfg.enable {
     nixpkgs.hostPlatform = "aarch64-linux";
 
+    # A crude way of preventing the devices from running out of RAM or generally
+    # freezing up while building their configurations.
+    nix.settings.max-jobs = lib.mkDefault 2;
+
     # Some firmware from `linux-firmware` is required.
     hardware.enableRedistributableFirmware = true;
 
