@@ -22,6 +22,9 @@ in
     # freezing up while building their configurations.
     nix.settings.max-jobs = lib.mkDefault 2;
 
+    # These devices have very limited RAM.
+    zramSwap.enable = lib.mkDefault true;
+
     # Some firmware from `linux-firmware` is required.
     hardware.enableRedistributableFirmware = true;
 
