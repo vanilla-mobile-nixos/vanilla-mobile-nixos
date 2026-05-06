@@ -1,9 +1,19 @@
 # Vanilla Mobile NixOS
 
-Run standard NixOS on your mobile devices!
+This is a WIP hub for instructions, modules, and packages for running standard NixOS on
+mobile devices.
 
-This is a WIP hub for packages, modules, and instructions for running NixOS on mobile
-devices. I highly recommend trying NixOS out on a mobile device. It gets easier by the month.
+## Why run NixOS on a mobile device?
+
+NixOS's declarative configuration shines best when used with multiple devices. Being
+able to use the same workflows, integrations, and software you've already configured
+can be a huge benefit.
+
+In a more general sense, freedom on mobile devices is in danger. It's more dire than
+Windows and a place that Linux can similarly help. It's natural to point out the
+potential problems and rough edges with mobile Linux, but just like the switch from
+Windows to Linux, it keeps getting better. What's needed are more passionate people
+like probably you, a NixOS user.
 
 ## What does "Vanilla" mean?
 
@@ -37,8 +47,8 @@ Implemented but untested:
 
 ## What software should I use?
 
-Depending on your tastes it's totally possible to keep your mobile config 95% identical
-to your desktop config.
+Depending on your tastes it's possible to keep your mobile config 95% identical
+to your desktop config or completely custom.
 
 The first choice is what desktop environment to use.
 
