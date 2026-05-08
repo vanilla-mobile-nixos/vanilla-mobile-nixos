@@ -6,6 +6,11 @@ self:
     (import ./xiaomi-beryllium.nix self)
   ];
 
+  # Allow using the power button to toggle Plymouth splash.
+  boot.plymouth.extraConfig = ''
+    XkbExtraEscButton=0x1008ff2a  # XKB_KEY_XF86PowerOff
+  '';
+
   # Enable Modem Manager quick suspend and resume support. Without it,
   # Modem Manager will crash and not resume properly after a suspend.
   # See <https://gitlab.freedesktop.org/mobile-broadband/ModemManager/-/work_items/1039>
