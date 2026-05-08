@@ -1,10 +1,32 @@
 self:
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.vanilla-mobile;
+in
 {
   imports = (lib.remove self.nixosModules.vanilla-mobile (lib.attrValues self.nixosModules)) ++ [
-    (import ./sdm845.nix self)
-    (import ./xiaomi-beryllium.nix self)
+    (import ./soc self)
+    ./deviceInfo.nix
+    (import ./disko.nix self)
+    ./uboot.nix
   ];
+
+  hardware = {
+    firmware = lib.mkIf (cfg.deviceInfo.firmware != null) (
+      lib.mkAfter [
+        cfg.deviceInfo.firmware
+      ]
+    );
+    deviceTree = lib.mkIf (cfg.deviceInfo.dtb != null) {
+      enable = true;
+      name = cfg.deviceInfo.dtb;
+    };
+  };
 
   # Allow using the power button to toggle Plymouth splash.
   boot.plymouth.extraConfig = ''

@@ -33,18 +33,17 @@ in
       else
         [ ];
 
-    vanilla-mobile.soc.sdm845.enable = true;
-
-    # Link `/share` into environment for hexagonrpcd.
-    environment.systemPackages = [ vanilla-mobile-pkgs.xiaomi-beryllium-firmware ];
-
-    hardware = {
-      firmware = lib.mkAfter [ vanilla-mobile-pkgs.xiaomi-beryllium-firmware ];
-      deviceTree = {
-        enable = true;
-        name = "qcom/sdm845-xiaomi-beryllium-${cfg.displayPanel}.dtb";
+    vanilla-mobile = {
+      deviceInfo = {
+        codename = "xiaomi-beryllium";
+        dtb = "qcom/sdm845-xiaomi-beryllium-${cfg.displayPanel}.dtb";
+        imageSectorSize = 4096;
+        firmware = vanilla-mobile-pkgs.xiaomi-beryllium-firmware;
+        uboot = vanilla-mobile-pkgs.ubootPackages."xiaomi-beryllium-${cfg.displayPanel}-image";
       };
+      soc.sdm845.enable = true;
     };
+
     boot = {
       kernelParams = [
         # Look for the firmware we add to `extra-firmware`.
