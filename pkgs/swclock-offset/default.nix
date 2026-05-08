@@ -7,26 +7,26 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "swclock-offset";
-  version = "0.2.6";
+  version = "0.3.0";
 
   src = fetchFromGitLab {
     domain = "gitlab.postmarketos.org";
     owner = "postmarketOS";
     repo = "swclock-offset";
     rev = finalAttrs.version;
-    hash = "sha256-yIzPQshz3S3qcrjIn5/dh7tbFRFkks5AwBAeSHZeUBE=";
+    hash = "sha256-4iVSua0UJuom0QxZNVUHo8lD3Pcke6CoHIozaG9JO3c=";
   };
-
-  postPatch = ''
-    substituteInPlace Makefile \
-      --replace-fail "/usr/" "/"
-    substituteInPlace systemd/swclock-offset-{boot,shutdown}.service \
-      --replace-fail /usr/bin/ "$out/bin/"
-  '';
 
   nativeBuildInputs = [ makeWrapper ];
 
-  makeFlags = [ "DESTDIR=$(out)" ];
+  dontBuild = true;
+  makeFlags = [
+    "prefix=$(out)"
+  ];
+  installTargets = [
+    "bin"
+    "systemd"
+  ];
 
   postInstall = ''
     wrapProgram $out/bin/swclock-offset-boot \

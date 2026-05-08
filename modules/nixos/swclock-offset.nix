@@ -20,7 +20,6 @@ in
       packages = [ cfg.package ];
       services = {
         swclock-offset-boot = {
-          wantedBy = [ "sysinit.target" ];
           serviceConfig.RemainAfterExit = true;
           restartIfChanged = false;
         };
@@ -32,6 +31,10 @@ in
           ];
         };
         save-hwclock.enable = false;
+      };
+      paths.swclock-offset-boot = {
+        wantedBy = [ "sysinit.target" ];
+        pathConfig.PathExists = [ "/sys/class/rtc/rtc0/since_epoch" ];
       };
     };
   };
