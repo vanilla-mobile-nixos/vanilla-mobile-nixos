@@ -65,8 +65,11 @@ in
 
     networking.modemmanager.enable = true;
 
-    # To setup a MAC address for Bluetooth.
-    services.bootmac.enable = true;
+    # Setup Bluetooth interface MAC address.
+    services.bootmac = {
+      enable = true;
+      bluetooth.enable = true;
+    };
 
     # These devices don't have a writable RTC.
     services.swclock-offset.enable = true;

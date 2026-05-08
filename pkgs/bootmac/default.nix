@@ -1,45 +1,57 @@
 {
   lib,
-  stdenvNoCC,
+  stdenv,
   fetchFromGitLab,
+  meson,
+  ninja,
   makeWrapper,
   gawk,
   bluez,
   util-linux,
   gnugrep,
+  gnused,
   coreutils,
+  iproute2,
+  udevCheckHook,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenv.mkDerivation (finalAttrs: {
   name = "bootmac";
-  version = "0.6.0";
+  version = "0.7.1";
 
   src = fetchFromGitLab {
     domain = "gitlab.postmarketos.org";
     owner = "postmarketOS";
     repo = "bootmac";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-P6PllD7ploQiLqyksmBkYe44badWL2LuCSNPhGw32xo=";
+    hash = "sha256-GWvZUC8LKPpOWt1oCr93JHg5+W+0CCiYT63VhpSH1ko=";
   };
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [
+    meson
+    ninja
+    makeWrapper
+    udevCheckHook
+  ];
 
-  installPhase = ''
-    mkdir -p $out/bin
-    install bootmac $out/bin/bootmac
-    wrapProgram $out/bin/bootmac \
-      --prefix PATH : ${
-        lib.makeBinPath [
-          gawk
-          bluez
-          util-linux
-          gnugrep
-          coreutils
-        ]
-      }
+  mesonFlags = [ "-Dsystemd_units=true" ];
 
-    mkdir -p $out/lib/systemd/system
-    substitute bootmac-bluetooth.service \
-      $out/lib/systemd/system/bootmac-bluetooth.service \
+  postInstall = ''
+     wrapProgram $out/bin/bootmac \
+       --prefix PATH : ${
+         lib.makeBinPath [
+           gawk
+           bluez
+           util-linux
+           gnugrep
+           gnused
+           coreutils
+           iproute2
+         ]
+       }
+
+    substituteInPlace \
+      $out/lib/systemd/system/bootmac@.service \
+      $out/lib/udev/rules.d/90-bootmac-{bluetooth,wifi}.rules \
       --replace-fail /usr/bin/bootmac $out/bin/bootmac
   '';
 
