@@ -1,0 +1,21 @@
+From 721f5abf7bf8eeaa404a3dc1443b5f56464e9fb5 Mon Sep 17 00:00:00 2001
+From: June Stepp <git@junestepp.me>
+Date: Sat, 9 May 2026 21:13:02 -0500
+Subject: [PATCH] Xiaomi: beryllium: add uboot symlink for newer kernels
+
+---
+ ucm2/conf.d/sdm845/xiaomi-XiaomiPocophoneF1Tianma.conf | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 120000 ucm2/conf.d/sdm845/xiaomi-XiaomiPocophoneF1Tianma.conf
+
+diff --git a/ucm2/conf.d/sdm845/xiaomi-XiaomiPocophoneF1Tianma.conf b/ucm2/conf.d/sdm845/xiaomi-XiaomiPocophoneF1Tianma.conf
+new file mode 120000
+index 0000000..559e147
+--- /dev/null
++++ b/ucm2/conf.d/sdm845/xiaomi-XiaomiPocophoneF1Tianma.conf
+@@ -0,0 +1 @@
++Xiaomi Poco F1.conf
+\ No newline at end of file
+-- 
+GitLab
+

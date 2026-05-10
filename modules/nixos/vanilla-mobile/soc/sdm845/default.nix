@@ -17,6 +17,8 @@ in
 
   options.vanilla-mobile.soc.sdm845 = {
     enable = lib.mkEnableOption "sdm845";
+
+    audio.enable = lib.mkEnableOption "audio";
     modem.enable = lib.mkEnableOption "modem";
     sensors.enable = lib.mkEnableOption "sensors";
   };
@@ -25,6 +27,7 @@ in
     lib.mkMerge [
       {
         vanilla-mobile.soc.sdm845 = {
+          audio.enable = lib.mkDefault true;
           modem.enable = lib.mkDefault true;
           sensors.enable = lib.mkDefault true;
         };
@@ -47,7 +50,16 @@ in
         vanilla-mobile.uboot.enable = true;
         boot = {
           kernelPackages = lib.mkForce (pkgs.linuxPackagesFor vanilla-mobile-pkgs.linuxKernels.linux_sdm845);
-          kernelParams = [ "console=tty0" ];
+
+          blacklistedKernelModules = [
+            # Causes boot lockup. Can be modprobed later.
+            "ipa"
+          ];
+          kernelParams = [
+            "console=tty0"
+            # Improves boot with `ipa` kernel module. Also, helps security.
+            # "init_on_alloc=1"
+          ];
           initrd = {
             # disable default modules (some of which dont exist in our kernel).
             includeDefaultModules = false;
@@ -57,14 +69,9 @@ in
             kernelModules = [
               "dm_mod"
             ];
+
             systemd.tpm2.enable = false;
           };
-          blacklistedKernelModules = [
-            # Booting will fail if IPA loads before firmware is available.
-            # IPA also causes issues during shutdown, so it is not loaded
-            # after boot.
-            "ipa"
-          ];
         };
 
         # Setup Bluetooth interface MAC address.
@@ -76,6 +83,53 @@ in
         # These devices don't have a writable RTC.
         services.swclock-offset.enable = true;
       }
+      # Audio
+      (lib.mkIf cfg.audio.enable {
+        vanilla-mobile.alsa-ucm-conf = {
+          enable = true;
+          package = vanilla-mobile-pkgs.alsa-ucm-conf-sdm845;
+        };
+
+        # Only tested with PipeWire.
+        services.pipewire = {
+          enable = lib.mkDefault true;
+          alsa.enable = lib.mkDefault true;
+          pulse.enable = lib.mkDefault true;
+        };
+        security.rtkit.enable = lib.mkDefault true;
+
+        # See <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/main/device/community/soc-qcom/51-qcom.conf>.
+        services.pipewire.wireplumber.extraConfig."51-qcom" = {
+          "monitor.alsa.rules" = [
+            {
+              matches = [
+                {
+                  # Matches all sources.
+                  "node.name" = "~alsa_input.*";
+                }
+                {
+                  # Matches all sinks.
+                  "node.name" = "~alsa_output.*";
+                }
+              ];
+              actions = {
+                update-props = {
+                  "audio.format" = "S16LE";
+                  "audio.rate" = 48000;
+                  "api.alsa.period-size" = 4096;
+                  "api.alsa.period-num" = 6;
+                  "api.alsa.headroom" = 512;
+                  # session.suspend-timeout-seconds = 0
+                  # dither.method = "wannamaker3", # add dither of desired shape
+                  # dither.noise = 2, # add additional bits of noise
+                };
+              };
+            }
+          ];
+        };
+
+        services.q6voiced.enable = true;
+      })
       # Modem
       (lib.mkIf cfg.modem.enable {
         services.rmtfs.enable = true;

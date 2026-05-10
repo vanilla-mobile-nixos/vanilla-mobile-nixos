@@ -34,7 +34,7 @@ secondhand.
 
 Tested Devices:
 - [Xiaomi POCO F1 Tianma (xiaomi-beryllium)](docs/xiaomi-beryllium.md)
-  - SIM card dependent features currently untested.
+  - SIM card currently untested.
 
 Implemented but untested:
 - Xiaomi POCO F1 EBBG

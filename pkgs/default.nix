@@ -14,8 +14,11 @@ in
   # Firmware
   xiaomi-beryllium-firmware = callPackage ./xiaomi-beryllium-firmware { };
 
+  alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
+
   bootmac = callPackage ./bootmac { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
   msm-modem = callPackage ./msm-modem { };
   swclock-offset = callPackage ./swclock-offset { };
+  q6voiced = callPackage ./q6voiced { };
 }

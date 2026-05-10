@@ -11,6 +11,7 @@ in
 {
   imports = (lib.remove self.nixosModules.vanilla-mobile (lib.attrValues self.nixosModules)) ++ [
     (import ./soc self)
+    ./alsa-ucm-conf.nix
     ./deviceInfo.nix
     (import ./disko.nix self)
     ./uboot.nix
