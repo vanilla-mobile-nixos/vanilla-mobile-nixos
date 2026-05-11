@@ -79,6 +79,9 @@ Here's a simple example of that for flakes:
 }
 ```
 
+For Home Manager users, there's an additional `homeManagerModules.vanilla-mobile` module
+available.
+
 Now open `xiaomi-beryllium/configuration.nix`, and set the value of the commented
 out `vanilla-mobile.device.xiaomi-beryllium.displayPanel` to your device's display
 variant you identified earlier.

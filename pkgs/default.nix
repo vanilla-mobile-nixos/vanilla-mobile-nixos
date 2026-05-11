@@ -18,6 +18,7 @@ in
 
   bootmac = callPackage ./bootmac { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
+  mobile-config-firefox = callPackage ./mobile-config-firefox { };
   msm-modem = callPackage ./msm-modem { };
   swclock-offset = callPackage ./swclock-offset { };
   q6voiced = callPackage ./q6voiced { };

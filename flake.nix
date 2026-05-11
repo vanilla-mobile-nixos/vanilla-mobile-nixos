@@ -33,7 +33,7 @@
         default = getDefault system;
       in
       {
-        nixosModules = default.nixosModules;
+        inherit (default) nixosModules homeManagerModules;
       }
     ));
 }

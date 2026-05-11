@@ -14,6 +14,7 @@ in
     ./alsa-ucm-conf.nix
     ./deviceInfo.nix
     (import ./disko.nix self)
+    (import ./mobile-config-firefox.nix self)
     ./uboot.nix
   ];
 

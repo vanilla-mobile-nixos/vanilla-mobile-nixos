@@ -88,12 +88,27 @@ management for free. No NixOS support or testing yet.
 If you're using a desktop environment it may already come with or have recommendations for
 these categories of software.
 
+A great place to browse for mobile friendly apps is <http://linuxphoneapps.org/>.
+
 #### Keyboard
 
 - [wvkbd](https://github.com/jjsullivan5196/wvkbd) is simple, compatible, and easy to
 set-up.
 - [Stevia](https://gitlab.gnome.org/World/Phosh/stevia) is very featureful. I haven't
 tried to set it up independent of Phosh where it's designed for.
+
+#### Browser
+
+There are multiple mobile focused low resource usage browsers available. It's also
+possible to use a mobile customized Firefox. See [Firefox](#firefox).
+
+##### Firefox
+
+Firefox works great on mobile with a few changes from the [mobile-config-firefox](https://gitlab.postmarketos.org/postmarketOS/mobile-config-firefox) project.
+You can easily add this to your existing NixOS or Home Manager Firefox or Librewolf config
+with `vanilla-mobile.mobile-config-firefox.enable = true;`.
+With this enabled, you should use `vanilla-mobile.mobile-config.firefox.firefoxPackage`
+instead of `programs.firefox.package` when you need to change the Firefox package.
 
 ## Acknowledgements
 

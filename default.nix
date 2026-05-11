@@ -30,4 +30,5 @@ in
     lib.makeScope pkgsCross.newScope (import ./pkgs pkgsCross);
 
   nixosModules = import ./modules/nixos flake;
+  homeManagerModules = import ./modules/homeManager flake;
 }
