@@ -111,7 +111,7 @@ are, you'll have to pass in the encryption password like this:
 // TODO: Convert to bash. Maybe do a `bash -c` as well.
 `./result --pre-format-files (read -s -P "LUKS Password: " | psub) /tmp/nixos-root.key`
 
-This should create two images. One for the boot partion and one for the root.
+This should create two images. One for the boot partition and one for the root.
 
 ### U-Boot
 

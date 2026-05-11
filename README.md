@@ -61,7 +61,7 @@ towards standalone compositors or want to keep what you use on Desktop, don't wo
 It's surprisingly easy to get them working well. All it really takes are a few gestures
 and an on-screen keyboard.
 
-#### Sway and River
+#### Sway or River
 
 There's a project called Sxmo or Simple X Mobile dedicated to making these compositors
 work well on mobile. I haven't tested it. You can also do it yourself similar to what I do for
@@ -96,6 +96,27 @@ A great place to browse for mobile friendly apps is <http://linuxphoneapps.org/>
 set-up.
 - [Stevia](https://gitlab.gnome.org/World/Phosh/stevia) is very featureful. I haven't
 tried to set it up independent of Phosh where it's designed for.
+
+#### Terminal
+
+There aren't many with support for touch gestures. I recommend using Alacritty.
+
+Supported:
+- [Alacritty](https://alacritty.org/)
+- [Gnome Console](https://apps.gnome.org/Console/)
+  - Only scrolling. No zoom or selection.
+- [QMLKonsole](https://apps.kde.org/qmlkonsole/)
+  - No zoom.
+
+Unsupported:
+- Ghostty
+  - Feature request: <https://github.com/ghostty-org/ghostty/discussions/5562>
+  - Has semi-working scrolling support.
+- Kitty
+  - Feature request: <https://github.com/kovidgoyal/kitty/issues/984>
+- LXTerminal
+  - Only selection.
+- Wezterm
 
 #### Browser
 
