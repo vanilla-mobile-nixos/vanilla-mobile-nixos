@@ -13,7 +13,7 @@ stdenvNoCC.mkDerivation {
     owner = "sdm845-mainline";
     repo = "firmware-xiaomi-beryllium";
     rev = "d396d32118803235a58aab0d0bc3643256634a05";
-    sha256 = "sha256-KKV6/2DJrz+keUVxKR3M6CQcCYQ518xMyxUqgIyAu/s=";
+    hash = "sha256-KKV6/2DJrz+keUVxKR3M6CQcCYQ518xMyxUqgIyAu/s=";
   };
 
   patches = [

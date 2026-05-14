@@ -13,7 +13,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "postmarketOS";
     repo = "mobile-config-firefox";
     tag = finalAttrs.version;
-    sha256 = "sha256-7kODNqICVGVxjNt7RYseQr0TDjC3L5EJprZTPeJxvMM=";
+    hash = "sha256-7kODNqICVGVxjNt7RYseQr0TDjC3L5EJprZTPeJxvMM=";
   };
 
   dontBuild = true;

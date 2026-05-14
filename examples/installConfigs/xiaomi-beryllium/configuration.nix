@@ -7,6 +7,9 @@
     ./disko-config.nix
   ];
 
+  # Remove this after the initial flash.
+  vanilla-mobile.installer.enable = true;
+
   vanilla-mobile.device.xiaomi-beryllium = {
     enable = true;
     # Set this to either "ebbg" or "tianma" depending on your display panel.

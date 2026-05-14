@@ -12,7 +12,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     owner = "sdm845-mainline";
     repo = "alsa-ucm-conf";
     rev = "628b9900cdd2b9b8356201293f1da5396cf0ca27";
-    sha256 = "sha256-8RvxmqD7zU/kZO7AYU/XOf9nXKewM8vAHordJfSvwS4=";
+    hash = "sha256-8RvxmqD7zU/kZO7AYU/XOf9nXKewM8vAHordJfSvwS4=";
   };
 
   patches = [

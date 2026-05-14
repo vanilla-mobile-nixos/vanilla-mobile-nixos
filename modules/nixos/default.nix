@@ -7,5 +7,7 @@ self: {
   rmtfs = import ./rmtfs.nix;
   swclock-offset = import ./swclock-offset.nix self;
   tqftpserv = import ./tqftpserv.nix;
+  usb-gadget = import ./usb-gadget.nix;
+  usb-moded = import ./usb-moded.nix self;
   q6voiced = import ./q6voiced.nix self;
 }

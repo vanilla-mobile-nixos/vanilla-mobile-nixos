@@ -17,9 +17,12 @@ in
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
 
   bootmac = callPackage ./bootmac { };
+  unudhcpd = callPackage ./unudhcpd { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   msm-modem = callPackage ./msm-modem { };
+  ssu-sysinfo = callPackage ./ssu-sysinfo { };
   swclock-offset = callPackage ./swclock-offset { };
+  usb-moded = callPackage ./usb-moded { };
   q6voiced = callPackage ./q6voiced { };
 }

@@ -6,10 +6,19 @@
   # Most of this information can be found in postmarketOS `deviceinfo` files.
   # Example: <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/main/device/community/device-xiaomi-beryllium/deviceinfo>
   options.vanilla-mobile.deviceInfo = {
+    name = lib.mkOption {
+      type = lib.types.str;
+      example = "Xiaomi Poco F1";
+    };
     codename = lib.mkOption {
       type = lib.types.str;
       example = "xiaomi-beryllium";
     };
+    manufacturer = lib.mkOption {
+      type = lib.types.str;
+      example = "Xiaomi";
+    };
+
     dtb = lib.mkOption {
       type = with lib.types; nullOr str;
       default = null;

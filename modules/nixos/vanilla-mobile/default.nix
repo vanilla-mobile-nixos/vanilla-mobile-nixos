@@ -14,8 +14,10 @@ in
     ./alsa-ucm-conf.nix
     ./deviceInfo.nix
     (import ./disko.nix self)
+    ./installer.nix
     (import ./mobile-config-firefox.nix self)
     ./uboot.nix
+    (import ./usb-gadget.nix self)
   ];
 
   hardware = {
@@ -29,6 +31,8 @@ in
       name = cfg.deviceInfo.dtb;
     };
   };
+
+  vanilla-mobile.usb-gadget.enable = lib.mkDefault true;
 
   # Allow using the power button to toggle Plymouth splash.
   boot.plymouth.extraConfig = ''

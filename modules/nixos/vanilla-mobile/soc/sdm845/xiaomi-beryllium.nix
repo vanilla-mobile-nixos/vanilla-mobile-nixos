@@ -35,7 +35,9 @@ in
 
     vanilla-mobile = {
       deviceInfo = {
+        name = "Xiaomi Poco F1";
         codename = "xiaomi-beryllium";
+        manufacturer = "Xiaomi";
         dtb = "qcom/sdm845-xiaomi-beryllium-${cfg.displayPanel}.dtb";
         imageSectorSize = 4096;
         firmware = vanilla-mobile-pkgs.xiaomi-beryllium-firmware;
