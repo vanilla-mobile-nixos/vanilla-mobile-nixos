@@ -38,6 +38,9 @@ Tested Devices:
 
 Implemented but untested:
 - Xiaomi POCO F1 EBBG
+  - Will need to be added to alsa-ucm-conf-sdm845 like I did for Tianma [here](https://gitlab.com/sdm845-mainline/alsa-ucm-conf/-/merge_requests/32).
+    Run this command to find out what symlink needs to be added:
+    `nix-shell -p alsa-utils --run "strace alsaucm reload"`
 - SDM845 kernel with non-beryllium devices.
   - OnePlus 6 (oneplus-enchilada)
   - OnePlus 6T 	(oneplus-fajita)
