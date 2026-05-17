@@ -105,7 +105,6 @@ kernel.override {
     DRM_PANEL_NOVATEK_NT36672A = yes;
     DRM_PANEL_EBBG_FT8719 = yes;
     TOUCHSCREEN_NOVATEK_NVT_TS = module;
-    QCOM_GPI_DMA = module;
     SND_SOC_TAS2559 = module;
     VIDEO_IMX363 = module;
     VIDEO_BU64748 = module;
@@ -119,20 +118,19 @@ kernel.override {
     MFD_MAX77705 = module;
     LEDS_MAX77705 = module;
     CHARGER_MAX77705 = module;
-    BATTERY_MAX17042 = module;
     INPUT_MAX77693_HAPTIC = module;
     PWM_CLK = module;
 
     # SHIFT6mq
     DRM_PANEL_VISIONOX_RM69299 = module;
     SND_SOC_TFA989X = module;
+    VIDEO_DW9714 = module;
 
     # Pixel 3
     DRM_PANEL_LG_SW43408 = yes;
     TOUCHSCREEN_STMFTS = module;
     SND_SOC_CS35L36 = module;
     VIDEO_IMX355 = module;
-    EEPROM_AT24 = module;
 
     # Mi Mix 2S
     DRM_PANEL_NOVATEK_NT35596S = yes;
@@ -145,10 +143,14 @@ kernel.override {
     DRM_TI_SN65DSI86 = yes;
     DRM_PANEL_EDP = yes;
     PHY_QCOM_EDP = yes;
-    I2C_HID_OF_ELAN = module;
     BACKLIGHT_PWM = yes;
-    EC_LENOVO_YOGA_C630 = module;
     BATTERY_LENOVO_YOGA_C630 = module;
+
+    # LG G7 ThinQ
+    DRM_PANEL_LG_SW49410_LH609QH1 = yes;
+    TOUCHSCREEN_SW49410 = yes;
+    QCOM_WDT = yes;
+    SPI_QCOM_GENI = yes;
 
     # SOC
     FORCE_NR_CPUS = yes;
@@ -169,31 +171,13 @@ kernel.override {
     QCOM_LMH = yes;
     SCHED_CLUSTER = yes;
     SND_SOC_QDSP6_Q6VOICE = module;
-    SCSI_UFS_BSG = yes;
     PHY_QCOM_QMP_PCIE = yes;
     BACKLIGHT_CLASS_DEVICE = yes;
     INTERCONNECT_QCOM_OSM_L3 = yes;
-    # Notification LED
-    # Must be builtin as it won't be automatically modprobed
-    LEDS_TRIGGER_PATTERN = yes;
-    LEDS_CLASS_MULTICOLOR = module;
-    LEDS_QCOM_LPG = module;
     I2C_QCOM_GENI = yes;
-
-    # Flash LED
-    LEDS_QCOM_FLASH = module;
-    LEDS_TRIGGER_ONESHOT = yes;
-    LEDS_TRIGGER_BACKLIGHT = yes;
-    LEDS_TRIGGER_ACTIVITY = yes;
-    LEDS_TRIGGER_TIMER = module;
-
-    # Touchscreen - Pocophone F1 / SHIFT6mq
-    TOUCHSCREEN_EDT_FT5X06 = module;
-    VIDEO_DW9714 = module;
 
     # Remoteproc
     SLIMBUS = yes;
-    SLIM_QCOM_NGD_CTRL = module;
     REMOTEPROC_CDEV = yes;
 
     # Battery
@@ -216,56 +200,25 @@ kernel.override {
     # Haptics
     INPUT_QCOM_SPMI_HAPTICS = module;
 
-    # Power management
-    PM_AUTOSLEEP = yes;
-    PM_WAKELOCKS = yes;
-
     # Needed for mounting userdata on android
     QFMT_V2 = yes;
 
     # USB
-    REGULATOR_QCOM_USB_VBUS = module;
     PHY_QCOM_QMP_USB = yes;
 
     # Qcom stuff
     RPMSG_CHAR = yes;
-    QCOM_Q6V5_ADSP = module;
-    QCOM_COINCELL = module;
-    QCOM_FASTRPC = module;
     QCOM_SPMI_VADC = yes;
     QCOM_SPMI_ADC5 = yes;
     PHY_QCOM_QMP = yes;
     PHY_QCOM_QUSB2 = yes;
     PHY_QCOM_QMP_UFS = yes;
-    TYPEC = yes;
     PHY_QCOM_QMP_COMBO = yes;
-    LEDS_CLASS_FLASH = yes;
-    TCP_CONG_ADVANCED = yes;
-    TCP_CONG_WESTWOOD = yes;
-    DEFAULT_WESTWOOD = yes;
-    BLK_DEV_RAM = module;
-    BLK_DEV_RAM_SIZE = freeform "8192";
-    NLS_UTF8 = module;
-    NLS_DEFAULT = freeform "utf8";
-    FAT_DEFAULT_UTF8 = yes;
-    CPU_FREQ_GOV_POWERSAVE = yes;
-    U_SERIAL_CONSOLE = yes;
-
-    # Qcomlt
-    BLK_INLINE_ENCRYPTION = yes;
     MFD_QCOM_RPM = yes;
     USB_DWC3_ULPI = yes;
-    SCSI_UFS_CRYPTO = yes;
     PHY_QCOM_USB_HS = yes;
     PHY_QCOM_USB_SNPS_FEMTO_V2 = yes;
-    INTERCONNECT_QCOM_SM6115 = yes;
-    SM_DISPCC_6115 = yes;
-    FS_ENCRYPTION = yes;
-    FS_ENCRYPTION_INLINE_CRYPT = yes;
-    CRYPTO_USER_API_AEAD = yes;
     CRYPTO_DEV_QCE = yes;
-    SM_GPUCC_6115 = yes;
-    INTERCONNECT_QCOM_QCM2290 = yes;
 
     # Disable all unrelated stuffs afaik
     # When an option is separated by spaces, the options under the first one had
@@ -963,12 +916,14 @@ kernel.override {
 
     # Crypto
     CRYPTO_LZ4 = module;
+    FS_ENCRYPTION = yes;
+    FS_ENCRYPTION_INLINE_CRYPT = yes;
+    CRYPTO_USER_API_AEAD = yes;
 
     # Networking
     # westwood is more efficient for wireless connections
     # than cubic
-    # Duplicate from sdm845.config
-    #DEFAULT_WESTWOOD = yes;
+    DEFAULT_WESTWOOD = yes;
     NETLINK_DIAG = module;
     NET_SCH_HTB = module;
     NET_SCH_MULTIQ = module;
@@ -979,19 +934,16 @@ kernel.override {
     DRM_GUD = module;
 
     # Ramdisk
-    # Duplicate from sdm845.config
-    # BLK_DEV_RAM = module;
+    BLK_DEV_RAM = module;
     BLK_DEV_RAM_COUNT = freeform "16";
-    # Duplicate from sdm845.config
-    # BLK_DEV_RAM_SIZE = freeform "8192";
+    BLK_DEV_RAM_SIZE = freeform "8192";
 
     # EFI
     EFI_SBAT_FILE = freeform "";
     EFI_ZBOOT = yes;
 
     # UTF8
-    # Duplicate from sdm845.config
-    # FAT_DEFAULT_UTF8 = yes;
+    FAT_DEFAULT_UTF8 = yes;
 
     # Inputs
     INPUT_JOYDEV = module;
@@ -1012,26 +964,22 @@ kernel.override {
 
     # Native Language Support
     NLS_ASCII = yes;
-    # Duplicate from sdm845.config
-    # NLS_DEFAULT = freeform "utf8";
-    # Duplicate from sdm845.config
-    # NLS_UTF8 = module;
+    NLS_DEFAULT = freeform "utf8";
+    NLS_UTF8 = module;
 
     # SCSI
     SCSI_SCAN_ASYNC = yes;
 
     # Sound
     SND_HWDEP = module;
-    SND_USB_AUDIO = module;
     SND_USB_AUDIO_USE_MEDIA_CONTROLLER = yes;
 
     # TCP
-    # Duplicate from sdm845.config
-    # TCP_CONG_ADVANCED = yes;
+    TCP_CONG_ADVANCED = yes;
     TCP_CONG_BIC = module;
     TCP_CONG_HTCP = module;
-    # Duplicate from sdm845.config
-    # TCP_CONG_WESTWOOD = yes;
+    TCP_CONG_WESTWOOD = yes;
+    TYPEC = yes;
 
     # UNIX Sockets
     UNIX_DIAG = yes;
@@ -1041,8 +989,7 @@ kernel.override {
     USB_F_HID = module;
 
     # Serial
-    # Duplicate from sdm845.config
-    # U_SERIAL_CONSOLE = yes;
+    U_SERIAL_CONSOLE = yes;
 
     # Pstore
     PSTORE = yes;
@@ -1072,6 +1019,10 @@ kernel.override {
 
     # Debugging stuff
     STACKTRACE = yes;
+
+    # Power management
+    PM_AUTOSLEEP = yes;
+    PM_WAKELOCKS = yes;
 
     # --- Enf of misc.config ---
 

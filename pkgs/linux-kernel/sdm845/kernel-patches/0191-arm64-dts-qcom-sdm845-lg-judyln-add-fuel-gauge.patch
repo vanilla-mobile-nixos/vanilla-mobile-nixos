@@ -1,4 +1,4 @@
-From e642dc43c278d0761ae2537a575551337acd5074 Mon Sep 17 00:00:00 2001
+From d0e3eeb9f5b65af74aff86285e82a2269497ac7b Mon Sep 17 00:00:00 2001
 From: Paul Sajna <sajattack@postmarketos.org>
 Date: Sun, 5 Oct 2025 14:03:28 -0700
 Subject: [PATCH 191/194] arm64: dts: qcom: sdm845-lg-judyln: add fuel gauge

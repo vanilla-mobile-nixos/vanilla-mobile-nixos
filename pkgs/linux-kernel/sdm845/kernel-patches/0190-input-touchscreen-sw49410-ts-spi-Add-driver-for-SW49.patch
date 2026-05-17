@@ -1,4 +1,4 @@
-From b876e14e74b8a9a9d8e5f105c684ccf40b6fe291 Mon Sep 17 00:00:00 2001
+From df60a410395b030f340b962b8b7b80caf11546a0 Mon Sep 17 00:00:00 2001
 From: Paul Sajna <sajattack@postmarketos.org>
 Date: Sat, 13 Sep 2025 15:37:02 -0700
 Subject: [PATCH 190/194] input: touchscreen: sw49410-ts-spi: Add driver for
@@ -12,9 +12,9 @@ Signed-off-by: Paul Sajna <sajattack@postmarketos.org>
 ---
  arch/arm64/boot/dts/qcom/sdm845-lg-judyln.dts |  22 +
  drivers/input/touchscreen/Kconfig             |  12 +
- drivers/input/touchscreen/Makefile            |   2 +
+ drivers/input/touchscreen/Makefile            |   1 +
  drivers/input/touchscreen/sw49410-ts-spi.c    | 504 ++++++++++++++++++
- 4 files changed, 540 insertions(+)
+ 4 files changed, 539 insertions(+)
  create mode 100644 drivers/input/touchscreen/sw49410-ts-spi.c
 
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-lg-judyln.dts b/arch/arm64/boot/dts/qcom/sdm845-lg-judyln.dts
@@ -74,15 +74,14 @@ index aeaf9a9cbb41..84d18b0ffb94 100644
  	tristate "Semtech SX8654 touchscreen"
  	depends on I2C
 diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
-index f2b002abebe8..46c4c6fd10a0 100644
+index f2b002abebe8..79e3babf0307 100644
 --- a/drivers/input/touchscreen/Makefile
 +++ b/drivers/input/touchscreen/Makefile
-@@ -119,3 +119,5 @@ obj-$(CONFIG_TOUCHSCREEN_IQS5XX)	+= iqs5xx.o
+@@ -119,3 +119,4 @@ obj-$(CONFIG_TOUCHSCREEN_IQS5XX)	+= iqs5xx.o
  obj-$(CONFIG_TOUCHSCREEN_IQS7211)	+= iqs7211.o
  obj-$(CONFIG_TOUCHSCREEN_ZINITIX)	+= zinitix.o
  obj-$(CONFIG_TOUCHSCREEN_HIMAX_HX83112B)	+= himax_hx83112b.o
 +obj-$(CONFIG_TOUCHSCREEN_SW49410) += sw49410-ts-spi.o
-+obj-$(CONFIG_TOUCHSCREEN_STM_FTS_DOWNSTREAM)		+= stm/
 diff --git a/drivers/input/touchscreen/sw49410-ts-spi.c b/drivers/input/touchscreen/sw49410-ts-spi.c
 new file mode 100644
 index 000000000000..5bf6293cda00

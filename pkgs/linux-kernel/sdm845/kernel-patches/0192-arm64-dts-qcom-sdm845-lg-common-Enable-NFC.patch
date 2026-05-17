@@ -1,4 +1,4 @@
-From 8d25accc2007d968e676e270931bc7a13278c1c7 Mon Sep 17 00:00:00 2001
+From 63e9b2ee1cc8bf6a53ab391942d4fc0d0c9ce9c1 Mon Sep 17 00:00:00 2001
 From: Paul Sajna <sajattack@postmarketos.org>
 Date: Thu, 26 Mar 2026 12:52:25 -0700
 Subject: [PATCH 192/194] arm64: dts: qcom: sdm845-lg-common: Enable NFC

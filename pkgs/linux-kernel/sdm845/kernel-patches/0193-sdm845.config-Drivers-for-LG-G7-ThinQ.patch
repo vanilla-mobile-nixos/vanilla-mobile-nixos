@@ -1,4 +1,4 @@
-From 1b5a1b8c0642b432ff36596f9461b751b6a6271e Mon Sep 17 00:00:00 2001
+From b9e9d5126e32542e58d65548a3d17bcd21fdc906 Mon Sep 17 00:00:00 2001
 From: Paul Sajna <sajattack@postmarketos.org>
 Date: Tue, 28 Apr 2026 18:07:20 -0700
 Subject: [PATCH 193/194] sdm845.config: Drivers for LG G7 ThinQ

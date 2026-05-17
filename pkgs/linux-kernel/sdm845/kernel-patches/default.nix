@@ -796,7 +796,7 @@
     patch = ./0193-sdm845.config-Drivers-for-LG-G7-ThinQ.patch;
   }
   {
-    name = "0194-sdm845.config-build-LEDS-TRIGGERs-as-modules";
-    patch = ./0194-sdm845.config-build-LEDS-TRIGGERs-as-modules.patch;
+    name = "0194-sdm845.config-further-cleanup-and-some-moved-into-mi";
+    patch = ./0194-sdm845.config-further-cleanup-and-some-moved-into-mi.patch;
   }
 ]
