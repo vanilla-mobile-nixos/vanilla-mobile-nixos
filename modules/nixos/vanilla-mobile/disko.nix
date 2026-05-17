@@ -5,8 +5,60 @@ self:
   pkgs,
   ...
 }:
+let
+  cfg = config.vanilla-mobile.disko;
+
+  realBuildPkgs = self.inputs.nixpkgs.legacyPackages.${cfg.imageBuildSystem};
+in
 {
+  options.vanilla-mobile.disko = {
+    enable = lib.mkEnableOption "disko";
+
+    imageBuildSystem = lib.mkOption {
+      type = lib.types.str;
+      default = pkgs.stdenv.buildPlatform.system;
+      example = "x86_64-linux";
+      description = "Set to the real build system when using binfmt.";
+    };
+  };
+
   config = lib.mkIf (config.disko.devices != { }) {
+    disko.imageBuilder = {
+      imageFormat = "raw";
+      # Our kernels don't have all the modules required for virtualization.
+      kernelPackages = pkgs.linuxPackages;
+      useVirtualDevices = false;
+    }
+    // lib.optionalAttrs (cfg.imageBuildSystem != pkgs.stdenv.buildPlatform.system) {
+      enableBinfmt = true;
+      pkgs = realBuildPkgs.extend (
+        final: prev: {
+          # A needed bug fix is in version 11.0.0.
+          # Remove once <https://github.com/NixOS/nixpkgs/pull/502485> is merged.
+          qemu = prev.qemu.overrideAttrs (
+            finalAttrs: prevAttrs: {
+              version = "11.0.0";
+              src = pkgs.fetchurl {
+                url = "https://download.qemu.org/qemu-${finalAttrs.version}.tar.xz";
+                hash = "sha256-wEyjYBJlPzLRHGdNNwz1KnEOfT8Ywti2PkkyBSpIVNY=";
+              };
+
+              depsBuildBuild =
+                prevAttrs.depsBuildBuild
+                ++ (with pkgs.python3Packages; [
+                  pip
+                  qemu-qmp
+                  setuptools
+                  wheel
+                ]);
+            }
+          );
+
+        }
+      );
+      kernelPackages = realBuildPkgs.linuxPackages;
+    };
+
     # Grow the filesystem from the size of the image flashed to the full available
     # space on the partition it was flashed to.
     fileSystems."/".autoResize = true;

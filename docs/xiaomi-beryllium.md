@@ -103,13 +103,15 @@ boot.binfmt.emulatedSystems = [
 ];
 ```
 
+If you enable binfmt, you'll also need to set `vanilla-mobile.installer.buildSystem`
+in your phone config to the output of `nix-instantiate --eval --expr "(import <nixpkgs> {}).stdenv.system"`.
+
 Build the script that will generate the images. For flakes that looks like:
 `nix build .#nixosConfigurations.xiaomi-beryllium.config.system.build.diskoImagesScript`
 
 Now run the script. It's just `./result` if you aren't using LUKS encryption. If you
 are, you'll have to pass in the encryption password like this:
-// TODO: Convert to bash. Maybe do a `bash -c` as well.
-`./result --pre-format-files (read -s -P "LUKS Password: " | psub) /tmp/nixos-root.key`
+`bash -c 'read -s -p "LUKS Password: " p; tmp=$(mktemp); trap "rm \"$tmp\"" EXIT; echo "$p" > "$tmp"; ./result --pre-format-files "$tmp" /tmp/nixos-root.key'`
 
 This should create two images. One for the boot partition and one for the root.
 
@@ -131,12 +133,13 @@ boot partition).
   - `fastboot erase system flash system nixos-boot.raw`
 - Flash the NixOS root image to the phone's `userdata` partition:
   - `fastboot erase userdata flash userdata nixos-root.raw`
+  - It may hang with no output for a while. Be patient.
 - Reboot the phone with `fastboot reboot`. It may take a while. DO NOT manually reboot
   or interrupt the command.
 
 ### SSH Access
 
-- `nix build .#nixosConfigurations.beryllium-installer.config.system.build.installerSSHWrapper -o installerSSHWrapper`
+- Once booted, you should be able to SSH into the phone over USB with `ssh nixos@172.16.42.1`.
 
 ### Installation
 

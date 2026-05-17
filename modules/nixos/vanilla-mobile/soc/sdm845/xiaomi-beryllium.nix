@@ -2,12 +2,9 @@ self:
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.vanilla-mobile.device.xiaomi-beryllium;
 in
 {
@@ -40,8 +37,8 @@ in
         manufacturer = "Xiaomi";
         dtb = "qcom/sdm845-xiaomi-beryllium-${cfg.displayPanel}.dtb";
         imageSectorSize = 4096;
-        firmware = vanilla-mobile-pkgs.xiaomi-beryllium-firmware;
-        uboot = vanilla-mobile-pkgs.ubootPackages."xiaomi-beryllium-${cfg.displayPanel}-image";
+        firmware = self.packages.xiaomi-beryllium-firmware;
+        uboot = self.packages.ubootPackages."xiaomi-beryllium-${cfg.displayPanel}-image";
       };
       soc.sdm845.enable = true;
     };

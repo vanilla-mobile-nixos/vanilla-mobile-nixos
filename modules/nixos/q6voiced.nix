@@ -2,18 +2,15 @@ self:
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.services.q6voiced;
 in
 {
   options.services.q6voiced = {
     enable = lib.mkEnableOption "q6voice call audio routing";
-    package = lib.mkPackageOption vanilla-mobile-pkgs "q6voiced" { };
+    package = lib.mkPackageOption self.packages "q6voiced" { };
 
     settings = {
       q6voice_card = lib.mkOption {

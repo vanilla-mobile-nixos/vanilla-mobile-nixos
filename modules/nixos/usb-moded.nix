@@ -9,8 +9,6 @@ self:
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.services.usb-moded;
 
   iniFormat = pkgs.formats.ini { };
@@ -18,7 +16,7 @@ in
 {
   options.services.usb-moded = {
     enable = lib.mkEnableOption "usb-moded";
-    package = lib.mkPackageOption vanilla-mobile-pkgs "usb-moded" { };
+    package = lib.mkPackageOption self.packages "usb-moded" { };
 
     settings = lib.mkOption {
       inherit (iniFormat) type;

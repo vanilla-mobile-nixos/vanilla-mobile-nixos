@@ -2,17 +2,25 @@ self:
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.vanilla-mobile.usb-gadget;
 in
 {
   options.vanilla-mobile.usb-gadget = {
     enable = lib.mkEnableOption "USB gadget configurations and daemons";
+
+    network = {
+      serverAddress = lib.mkOption {
+        type = lib.types.str;
+        default = "172.16.42.1";
+      };
+      clientAddress = lib.mkOption {
+        type = lib.types.str;
+        default = "172.16.42.2";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -25,9 +33,9 @@ in
     systemd.services.usb-gadget-unudhcpd = {
       description = "DHCP server for USB Gadget";
       serviceConfig = {
-        ExecStart = [
-          "${lib.getExe vanilla-mobile-pkgs.unudhcpd} -i usb0 -s 172.16.42.1 -c 172.16.42.2"
-        ];
+        ExecStart = ''
+          ${lib.getExe self.packages.unudhcpd} -i usb0 -s \
+              ${cfg.network.serverAddress} -c ${cfg.network.clientAddress}'';
       };
     };
 
@@ -40,7 +48,7 @@ in
           gadget_conf_directory = "configs/c.1";
         };
 
-        network.ip = "172.16.42.1";
+        network.ip = cfg.network.serverAddress;
       };
 
       modes = {

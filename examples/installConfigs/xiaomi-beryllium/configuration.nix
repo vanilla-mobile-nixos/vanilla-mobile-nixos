@@ -8,7 +8,12 @@
   ];
 
   # Remove this after the initial flash.
-  vanilla-mobile.installer.enable = true;
+  vanilla-mobile.installer = {
+    enable = true;
+    # If using binfmt, set `buildSystem` to the output of:
+    # `nix-instantiate --eval --expr "(import <nixpkgs> {}).stdenv.system"`
+    # buildSystem =
+  };
 
   vanilla-mobile.device.xiaomi-beryllium = {
     enable = true;

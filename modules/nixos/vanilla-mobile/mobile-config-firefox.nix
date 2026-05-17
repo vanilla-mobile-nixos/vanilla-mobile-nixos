@@ -6,14 +6,12 @@ self:
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.vanilla-mobile.mobile-config-firefox;
 in
 {
   options.vanilla-mobile.mobile-config-firefox = {
     enable = lib.mkEnableOption "mobile-config-firefox";
-    package = lib.mkPackageOption vanilla-mobile-pkgs "mobile-config-firefox" { };
+    package = lib.mkPackageOption self.packages "mobile-config-firefox" { };
 
     firefoxPackage = lib.mkPackageOption pkgs "firefox" { };
   };

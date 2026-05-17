@@ -9,12 +9,12 @@ let
   cfg = config.vanilla-mobile;
 in
 {
-  imports = (lib.remove self.nixosModules.vanilla-mobile (lib.attrValues self.nixosModules)) ++ [
+  imports = [
     (import ./soc self)
     ./alsa-ucm-conf.nix
     ./deviceInfo.nix
     (import ./disko.nix self)
-    ./installer.nix
+    (import ./installer.nix self)
     (import ./mobile-config-firefox.nix self)
     ./uboot.nix
     (import ./usb-gadget.nix self)

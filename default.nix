@@ -10,25 +10,44 @@ in
   system ? builtins.currentSystem,
   pkgs ? import inputs.nixpkgs {
     inherit system;
-    config = {
-      allowUnfreePackages = [
-        "xiaomi-beryllium-firmware"
-      ];
-    };
     overlays = [ ];
   },
-}:
+}@args:
 let
-  inherit (pkgs) lib;
+  inherit (inputs.nixpkgs) lib;
+
+  getPackages = pkgs: lib.makeScope pkgs.newScope (import ./pkgs pkgs);
+  getModule =
+    modules:
+    { pkgs, ... }:
+    let
+      self = import ./default.nix (args // { inherit pkgs; });
+    in
+    {
+      imports = lib.map (module: (module self)) modules;
+    };
 in
 {
-  packages = lib.makeScope pkgs.newScope (import ./pkgs pkgs);
-  packagesCross.aarch64-multiplatform =
-    let
-      pkgsCross = pkgs.pkgsCross.aarch64-multiplatform;
-    in
-    lib.makeScope pkgsCross.newScope (import ./pkgs pkgsCross);
+  inherit inputs getPackages;
+  packages = getPackages pkgs;
+  packagesCross.aarch64-multiplatform = getPackages pkgs.pkgsCross.aarch64-multiplatform;
 
-  nixosModules = import ./modules/nixos flake;
-  homeManagerModules = import ./modules/homeManager flake;
+  nixosModules = (lib.mapAttrs (_: value: getModule [ value ]) (import ./modules/nixos)) // {
+    vanilla-mobile = getModule (
+      [
+        (import ./modules/nixos/vanilla-mobile)
+      ]
+      ++ (lib.attrValues (import ./modules/nixos))
+    );
+  };
+  homeManagerModules =
+    (lib.mapAttrs (_: value: getModule [ value ]) (import ./modules/homeManager))
+    // {
+      vanilla-mobile = getModule (
+        [
+          (import ./modules/homeManager/vanilla-mobile)
+        ]
+        ++ (lib.attrValues (import ./modules/homeManager))
+      );
+    };
 }

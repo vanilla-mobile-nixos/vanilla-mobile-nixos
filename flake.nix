@@ -22,9 +22,7 @@
         default = getDefault system;
       in
       {
-        packages = default.packages // {
-          inherit (default) packagesCross;
-        };
+        inherit (default) packages;
       }
     ))
     // (inputs.flake-utils.lib.eachDefaultSystemPassThrough (

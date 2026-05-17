@@ -2,17 +2,15 @@ self:
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
   cfg = config.services.swclock-offset;
 in
 {
   options.services.swclock-offset = {
     enable = lib.mkEnableOption "swclock-offset";
-    package = lib.mkPackageOption vanilla-mobile-pkgs "swclock-offset" { };
+    package = lib.mkPackageOption self.packages "swclock-offset" { };
   };
 
   config = lib.mkIf cfg.enable {

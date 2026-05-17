@@ -2,12 +2,9 @@ self:
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.vanilla-mobile.soc.sdm845;
 in
 {
@@ -49,7 +46,9 @@ in
 
         vanilla-mobile.uboot.enable = true;
         boot = {
-          kernelPackages = lib.mkForce (pkgs.linuxPackagesFor vanilla-mobile-pkgs.linuxKernels.linux_sdm845);
+          kernelPackages = lib.mkForce (
+            config.vanilla-mobile.installer.crossPkgs.linuxPackagesFor config.vanilla-mobile.installer.vanillaMobileCrossPkgs.linuxKernels.linux_sdm845
+          );
 
           blacklistedKernelModules = [
             # Causes boot lockup. Can be modprobed later.
@@ -87,7 +86,7 @@ in
       (lib.mkIf cfg.audio.enable {
         vanilla-mobile.alsa-ucm-conf = {
           enable = true;
-          package = vanilla-mobile-pkgs.alsa-ucm-conf-sdm845;
+          package = self.packages.alsa-ucm-conf-sdm845;
         };
 
         # Only tested with PipeWire.

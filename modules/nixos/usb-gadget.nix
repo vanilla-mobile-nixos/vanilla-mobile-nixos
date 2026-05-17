@@ -1,3 +1,4 @@
+self:
 {
   lib,
   config,

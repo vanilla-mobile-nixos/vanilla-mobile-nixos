@@ -2,18 +2,15 @@ self:
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.services.msm-modem-uim-selection;
 in
 {
   options.services.msm-modem-uim-selection = {
     enable = lib.mkEnableOption "Qualcomm MSM modems UIM selection service";
-    package = lib.mkPackageOption vanilla-mobile-pkgs "msm-modem" { };
+    package = lib.mkPackageOption self.packages "msm-modem" { };
     simWaitTime = lib.mkOption {
       type = with lib.types; nullOr ints.unsigned;
       default = null;

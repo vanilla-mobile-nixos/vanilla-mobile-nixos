@@ -6,14 +6,12 @@ self:
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.services.bootmac;
 in
 {
   options.services.bootmac = {
     enable = lib.mkEnableOption "bootmac";
-    package = lib.mkPackageOption vanilla-mobile-pkgs "bootmac" { };
+    package = lib.mkPackageOption self.packages "bootmac" { };
 
     bluetooth.enable = lib.mkEnableOption "bluetooth";
     wifi.enable = lib.mkEnableOption "wifi";

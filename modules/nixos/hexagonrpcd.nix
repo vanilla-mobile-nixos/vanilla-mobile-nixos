@@ -2,17 +2,14 @@ self:
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
-  vanilla-mobile-pkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-
   cfg = config.services.hexagonrpcd;
 in
 {
   options.services.hexagonrpcd = {
-    package = lib.mkPackageOption vanilla-mobile-pkgs "hexagonrpc" { };
+    package = lib.mkPackageOption self.packages "hexagonrpc" { };
 
     adsp-rootpd.enable = lib.mkEnableOption "Server for FastRPC calls from Qualcomm ADSP - RootPD";
     adsp-sensorspd.enable = lib.mkEnableOption "Server for FastRPC calls from Qualcomm ADSP - sensorspd";

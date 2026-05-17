@@ -1,13 +1,11 @@
-self: {
-  vanilla-mobile = import ./vanilla-mobile self;
-
-  bootmac = import ./bootmac.nix self;
-  hexagonrpcd = import ./hexagonrpcd.nix self;
-  msm-modem-uim-selection = import ./msm-modem-uim-selection.nix self;
+{
+  bootmac = import ./bootmac.nix;
+  hexagonrpcd = import ./hexagonrpcd.nix;
+  msm-modem-uim-selection = import ./msm-modem-uim-selection.nix;
   rmtfs = import ./rmtfs.nix;
-  swclock-offset = import ./swclock-offset.nix self;
+  swclock-offset = import ./swclock-offset.nix;
   tqftpserv = import ./tqftpserv.nix;
   usb-gadget = import ./usb-gadget.nix;
-  usb-moded = import ./usb-moded.nix self;
-  q6voiced = import ./q6voiced.nix self;
+  usb-moded = import ./usb-moded.nix;
+  q6voiced = import ./q6voiced.nix;
 }

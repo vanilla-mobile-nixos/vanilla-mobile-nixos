@@ -43,7 +43,7 @@
         type = "disk";
         device = "/dev/disk/by-label/${label}";
         imageName = label;
-        imageSize = "5G";
+        imageSize = "3G";
         content = {
           type = "luks";
           name = "crypt";
@@ -98,4 +98,8 @@
         };
       };
   };
+
+  vanilla-mobile.disko.enable = true;
+  # To type the decryption password.
+  boot.initrd.unl0kr.enable = true;
 }
