@@ -18,7 +18,7 @@
   vanilla-mobile.device.xiaomi-beryllium = {
     enable = true;
     # Set this to either "ebbg" or "tianma" depending on your display panel.
-    # displayPanel = "";
+    # displayPanel = ;
   };
 
   # This option defines the first version of NixOS you have installed on this particular machine,
