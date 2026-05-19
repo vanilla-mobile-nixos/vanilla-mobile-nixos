@@ -7,7 +7,7 @@
   };
 
   outputs =
-    { self, ... }@inputs:
+    { self, flake-utils, ... }@inputs:
     let
       getDefault =
         system:
@@ -16,16 +16,16 @@
           inherit inputs system;
         };
     in
-    (inputs.flake-utils.lib.eachDefaultSystem (
+    (flake-utils.lib.eachDefaultSystem (
       system:
       let
         default = getDefault system;
       in
       {
-        inherit (default) packages;
+        packages = flake-utils.lib.flattenTree default.packages;
       }
     ))
-    // (inputs.flake-utils.lib.eachDefaultSystemPassThrough (
+    // (flake-utils.lib.eachDefaultSystemPassThrough (
       system:
       let
         default = getDefault system;

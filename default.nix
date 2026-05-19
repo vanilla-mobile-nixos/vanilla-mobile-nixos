@@ -11,12 +11,21 @@ in
   pkgs ? import inputs.nixpkgs {
     inherit system;
     overlays = [ ];
+    # This doesn't affect people using this in their config, since the modules will use
+    # their `pkgs`.
+    config.allowUnfree = true;
   },
 }@args:
 let
   inherit (inputs.nixpkgs) lib;
 
-  getPackages = pkgs: lib.makeScope pkgs.newScope (import ./pkgs pkgs);
+  getPackages =
+    pkgs:
+    let
+      scope = lib.makeScope pkgs.newScope (import ./pkgs pkgs);
+    in
+    scope.packages scope;
+
   getModule =
     modules:
     { pkgs, ... }:

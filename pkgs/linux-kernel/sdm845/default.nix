@@ -34,7 +34,9 @@ kernel.override {
   argsOverride = {
     inherit version;
     modDirVersion = kernel.modDirVersion;
+    extraMeta.platforms = [ "aarch64-linux" ];
   };
+
   kernelPatches = (import ./kernel-patches) ++ [
     {
       # Some sort of ordering issue with parts of structuredExtraConfig.
