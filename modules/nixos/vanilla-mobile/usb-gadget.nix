@@ -75,6 +75,7 @@ in
         };
       };
     };
+    services.usb-moded-notify.enable = lib.mkDefault true;
 
   };
 }

@@ -7,5 +7,6 @@
   tqftpserv = import ./tqftpserv.nix;
   usb-gadget = import ./usb-gadget.nix;
   usb-moded = import ./usb-moded.nix;
+  usb-moded-notify = import ./usb-moded-notify.nix;
   q6voiced = import ./q6voiced.nix;
 }
