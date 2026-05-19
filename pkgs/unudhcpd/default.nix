@@ -23,7 +23,7 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   meta = {
-    descrption = "Basic DHCP server that only issues 1 IP address";
+    description = "Basic DHCP server that only issues 1 IP address";
     homepage = "https://gitlab.postmarketos.org/postmarketOS/unudhcpd";
     license = lib.licenses.gpl3Plus;
     platforms = lib.platforms.all;

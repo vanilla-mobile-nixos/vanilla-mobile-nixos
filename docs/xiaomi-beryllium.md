@@ -29,7 +29,7 @@ on the phone.
 
 Here's the plan:
 
-1. Create a simple NixOS configuration for the phone.
+1. Create a simple "install" NixOS configuration for the phone.
 2. Use `disko` to build the configuration into flashable images.
 3. Flash U-Boot to the phone.
 4. Flash the NixOS configuration images to the phone.
@@ -95,7 +95,7 @@ in `examples/diskoConfigs`.
 
 The POCO F1 is an aarch64 device. If you don't have an aarch64 computer to build the installer
 on, you'll have to enable binfmt emulation.
-You can enable binfmt emulation by adding the following to your system configuration:
+You can enable binfmt emulation by adding the following to your PC system configuration:
 
 ```nix
 boot.binfmt.emulatedSystems = [
@@ -139,12 +139,40 @@ boot partition).
 
 ### SSH Access
 
-- Once booted, you should be able to SSH into the phone over USB with `ssh nixos@172.16.42.1`.
+Once booted, you should be able to SSH into the phone over USB with `ssh nixos@172.16.42.1`.
+If you have a strict SSH config, you may need to do something like:
+`ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=yes -o PreferredAuthentications=password nixos@172.16.42.1`
 
-### Installation
+By default, you'll lose SSH once you activate a non-install config. If you want
+to maintain the ability to have SSH access *only* over USB, you can add the following to
+your config:
 
-- Build the system and add it to the device's bootloader: `NIX_SSHOPTS="$(cat installerSSHWrapper/bin/ssh-opts)" nixos-rebuild boot --flake .#<HOST_NAME> --target-host "root@<IP_ADDRESS>"`
-- Reboot into the system!
+```nix
+services.openssh = {
+   enable = true;
+   # Only allowing SSH over USB.
+   openFirewall = false;
+   listenAddresses = [
+     {
+       addr = config.vanilla-mobile.usb-gadget.network.serverAddress;
+     }
+   ];
+ };
+```
+
+When you want to use SSH with this, you'll first need to switch to USB developer mode
+by selecting the "Developer" option in the notification that will appear when you plug
+the phone into a computer.
+
+### Starter Config
+
+First, remove the `vanilla-mobile.installer` section from your configuration.
+
+Now, you can add the rest of your config. See [What software should I use?](./software-info.md)
+for information and example configs.
+
+Once you've created your starter config, just send it over SSH and reboot:
+`nixos-rebuild boot --flake .#xiaomi-beryllium --target-host "root@172.16.42.1"`
 
 ## Troubleshooting
 

@@ -61,7 +61,7 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (
+  config = (
     lib.mkMerge [
       {
         vanilla-mobile.installer = {
@@ -69,7 +69,8 @@ in
           vanillaMobileCrossPkgs = (self.getPackages crossPkgs);
         };
         vanilla-mobile.disko.imageBuildSystem = cfg.buildSystem;
-
+      }
+      (lib.mkIf cfg.enable {
         services.getty.helpLine = ''
           The "nixos" and "root" accounts have empty passwords.
 
@@ -90,10 +91,7 @@ in
         # Allow the user to log in as root without a password.
         users.users.root.initialHashedPassword = "";
         # Allow passwordless sudo.
-        security.sudo = {
-          enable = lib.mkDefault true;
-          wheelNeedsPassword = lib.mkImageMediaOverride false;
-        };
+        security.sudo.wheelNeedsPassword = false;
 
         # Automatically log in at the virtual consoles.
         services.getty.autologinUser = "nixos";
@@ -108,8 +106,8 @@ in
           enable = true;
           settings.input.touchscreen = true;
         };
-      }
-      (lib.mkIf cfg.ssh.enable {
+      })
+      (lib.mkIf (cfg.enable && cfg.ssh.enable) {
         services.getty.helpLine = ''
           You can log in with SSH over USB with:
             `ssh nixos@${config.vanilla-mobile.usb-gadget.network.serverAddress}`
