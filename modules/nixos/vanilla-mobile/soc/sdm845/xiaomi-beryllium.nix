@@ -38,7 +38,7 @@ in
         dtb = "qcom/sdm845-xiaomi-beryllium-${cfg.displayPanel}.dtb";
         imageSectorSize = 4096;
         firmware = self.packages.xiaomi-beryllium-firmware;
-        uboot = self.packages.ubootPackages."xiaomi-beryllium-${cfg.displayPanel}-image";
+        uboot = self.packages.ubootPackages."xiaomi-beryllium-${cfg.displayPanel}-boot-image";
       };
       soc.sdm845.enable = true;
     };
