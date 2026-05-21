@@ -55,6 +55,7 @@ Here's a simple example of that for flakes:
   inputs = {
     # You should use `nixos-unstable` as your nixpkgs version for this.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Don't set `inputs.nixpkgs.follows`, to avoid cache misses.
     vanilla-mobile-nixos.url = "github:vanilla-mobile-nixos/vanilla-mobile-nixos";
     disko = {
       # Use disko fork until this PR is merged:
@@ -106,8 +107,28 @@ boot.binfmt.emulatedSystems = [
 If you enable binfmt, you'll also need to set `vanilla-mobile.installer.buildSystem`
 in your phone config to the output of `nix-instantiate --eval --expr "(import <nixpkgs> {}).stdenv.system"`.
 
+Before continuing, make sure you've read through and understand the install config.
+
+The cache enabled in the install config, won't work on your PC for building the image
+unless you add it to your PC's Nix configuration. You can do that without having it
+active all the time with:
+
+```nix
+nix.settings = {
+  trusted-substituters = [
+    "https://cache.garnix.io"
+  ];
+  trusted-public-keys = [
+    "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+  ];
+};
+```
+
+Then, just add `--option extra-substituters https://cache.garnix.io` to your build
+commands as shown below.
+
 Build the script that will generate the images. For flakes that looks like:
-`nix build .#nixosConfigurations.xiaomi-beryllium.config.system.build.diskoImagesScript`
+`nix build --option extra-substituters https://cache.garnix.io .#nixosConfigurations.xiaomi-beryllium.config.system.build.diskoImagesScript`
 
 Now run the script. It's just `./result` if you aren't using LUKS encryption. If you
 are, you'll have to pass in the encryption password like this:
@@ -122,7 +143,7 @@ It will be flashed to your device's `boot` partition (this is different from our
 boot partition).
 
 - Build the U-Boot boot image. For flakes that looks like:
-  - `nix build .#nixosConfigurations.xiaomi-beryllium.config.vanilla-mobile.deviceInfo.uboot`
+  - `nix build --option extra-substituters https://cache.garnix.io .#nixosConfigurations.xiaomi-beryllium.config.vanilla-mobile.deviceInfo.uboot`
 - Go into fastboot mode on the phone.
 - Flash u-boot to the phone: `fastboot erase dtbo erase boot flash boot result/u-boot.img`
 - Do not reboot or power off the phone yet.

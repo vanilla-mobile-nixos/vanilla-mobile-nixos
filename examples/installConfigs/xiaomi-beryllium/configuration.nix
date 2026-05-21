@@ -21,6 +21,24 @@
     # displayPanel = ;
   };
 
+  # Use the cache, so you don't have to spend hours building kernels.
+  # Security wise, you are already trusting the committers to `vanilla-mobile-nixos`
+  # on your mobile device. Adding the cache extends that trust to Garnix
+  # who hosts the cache and builds the artifacts.
+  nix.settings = {
+    substituters = [
+      "https://cache.garnix.io"
+    ];
+    trusted-public-keys = [
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    ];
+  };
+
+  # Allow using the phone's firmware.
+  nixpkgs.config.allowUnfreePackages = [
+    "xiaomi-beryllium-firmware"
+  ];
+
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
   #
