@@ -11,11 +11,11 @@ in
   pkgs ? import inputs.nixpkgs {
     inherit system;
     overlays = [ ];
-    # This doesn't affect people using this in their config, since the modules will use
-    # their `pkgs`.
+    # We have unfree firmwares. Users still have to allow them in their own nixpkgs
+    # config.
     config.allowUnfree = true;
   },
-}@args:
+}:
 let
   inherit (inputs.nixpkgs) lib;
 
@@ -30,14 +30,17 @@ let
     modules:
     { pkgs, ... }:
     let
-      self = import ./default.nix (args // { inherit pkgs; });
+      self = import ./default.nix {
+        inherit flake inputs;
+        system = pkgs.stdenv.hostPlatform.system;
+      };
     in
     {
       imports = lib.map (module: (module self)) modules;
     };
 in
 {
-  inherit inputs getPackages;
+  inherit inputs pkgs getPackages;
   packages = getPackages pkgs;
   packagesCross.aarch64-multiplatform = getPackages pkgs.pkgsCross.aarch64-multiplatform;
 

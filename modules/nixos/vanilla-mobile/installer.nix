@@ -10,12 +10,12 @@ let
 
   crossPkgs =
     if cfg.enableCrossPkgs && cfg.buildSystem != pkgs.stdenv.buildPlatform.system then
-      import pkgs.path {
+      import self.inputs.nixpkgs {
         localSystem = cfg.buildSystem;
         crossSystem = pkgs.stdenv.hostPlatform.system;
       }
     else
-      pkgs;
+      self.pkgs;
 in
 {
   options.vanilla-mobile.installer = {
