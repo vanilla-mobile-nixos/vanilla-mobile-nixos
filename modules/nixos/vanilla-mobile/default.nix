@@ -16,6 +16,7 @@ in
     (import ./disko.nix self)
     (import ./installer.nix self)
     (import ./mobile-config-firefox.nix self)
+    ./plymouth.nix
     ./uboot.nix
     (import ./usb-gadget.nix self)
   ];
@@ -33,11 +34,6 @@ in
   };
 
   vanilla-mobile.usb-gadget.enable = lib.mkDefault true;
-
-  # Allow using the power button to toggle Plymouth splash.
-  boot.plymouth.extraConfig = ''
-    XkbExtraEscButton=0x1008ff2a  # XKB_KEY_XF86PowerOff
-  '';
 
   # Enable Modem Manager quick suspend and resume support. Without it,
   # Modem Manager will crash and not resume properly after a suspend.
