@@ -72,7 +72,12 @@ in
             RemainAfterExit = true;
             ExecStart = [
               "busctl emit /com/nokia/startup/signal com.nokia.startup.signal init_done"
-              ''busctl call com.meego.usb_moded /com/meego/usb_moded com.meego.usb_moded set_mode s "${cfg.settings.usbmode.mode}"''
+              # Allowed to fail, since modes can't be switched to when the device is not
+              # plugged in.
+              ''
+                -busctl call com.meego.usb_moded /com/meego/usb_moded com.meego.usb_moded \
+                  set_mode s "${cfg.settings.usbmode.mode}"
+              ''
             ];
           };
         };
