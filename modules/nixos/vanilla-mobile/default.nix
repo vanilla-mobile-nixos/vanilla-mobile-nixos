@@ -52,6 +52,13 @@ in
     Login.HandlePowerKeyLongPress = lib.mkDefault "poweroff";
   };
 
+  services.pipewire.wireplumber.extraConfig."50-mobile-bluetooth" = {
+    "monitor.bluez.properties" = {
+      # Enable HFP/HSP ModemManager support.
+      "bluez5.hfphsp-backend-native-modem" = "any";
+    };
+  };
+
   # Enable proximity and accel sensors in iio-sensor-proxy.
   # See <https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/-/merge_requests/409>.
   services.udev.extraRules = ''
