@@ -95,4 +95,5 @@ You can easily add this to your existing NixOS or Home Manager Firefox or Librew
 with `vanilla-mobile.mobile-config-firefox.enable = true;`.
 With this enabled, you should use `vanilla-mobile.mobile-config.firefox.firefoxPackage`
 instead of `programs.firefox.package` when you need to change the Firefox package.
+`librewolfPackage` for Librewolf.
 
