@@ -228,10 +228,11 @@
     name = "0056-hack-ASoC-qdsp6-q6voice-dai-add-tdm";
     patch = ./0056-hack-ASoC-qdsp6-q6voice-dai-add-tdm.patch;
   }
-  {
-    name = "0057-hack-ASoC-qcom-qdsp6-q6asm-dai-Keep-stream-marked-ru";
-    patch = ./0057-hack-ASoC-qcom-qdsp6-q6asm-dai-Keep-stream-marked-ru.patch;
-  }
+  # Fixed upstream in commit cee3e63e7106c3c81b2053371fdf14240bfba2fc.
+  # {
+  #   name = "0057-hack-ASoC-qcom-qdsp6-q6asm-dai-Keep-stream-marked-ru";
+  #   patch = ./0057-hack-ASoC-qcom-qdsp6-q6asm-dai-Keep-stream-marked-ru.patch;
+  # }
   {
     name = "0058-hack-arm64-dts-qcom-sdm845-Add-q6voice-APR-service-d";
     patch = ./0058-hack-arm64-dts-qcom-sdm845-Add-q6voice-APR-service-d.patch;
