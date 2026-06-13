@@ -12,6 +12,7 @@ in
   imports = [
     (import ./soc self)
     ./alsa-ucm-conf.nix
+    ./cache.nix
     ./deviceInfo.nix
     (import ./disko.nix self)
     (import ./installer.nix self)
