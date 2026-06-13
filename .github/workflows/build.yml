@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  Atelier:
+    permissions:
+      contents: read
+      # So skipped-attribute checks can be posted.
+      checks: write
+
+    uses: JuneStepp/atelier/.github/workflows/discover.yaml@c8af117167b8937509dabf7af185259929639055
+    with:
+      repository: JuneStepp/atelier
+      ref: c8af117167b8937509dabf7af185259929639055
+
+    secrets:
+       CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+       CACHIX_SIGNING_KEY: ${{ secrets.CACHIX_SIGNING_KEY }}

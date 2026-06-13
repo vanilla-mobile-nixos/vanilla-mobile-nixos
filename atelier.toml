@@ -1,0 +1,6 @@
+systems = ["aarch64-linux"]
+
+# Caches checked before building; an attr already in one is skipped.
+# These are also injected into the nix.conf used at build time.
+substituters = ["https://vanilla-mobile-nixos.cachix.org"]
+trusted-public-keys = ["vanilla-mobile-nixos.cachix.org-1:nicMQxxTD4n6PM9dCvylqsCOCA6M2C6gybbCKrei8AQ="]
