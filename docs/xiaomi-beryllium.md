@@ -116,19 +116,19 @@ active all the time with:
 ```nix
 nix.settings = {
   trusted-substituters = [
-    "https://cache.garnix.io"
+    "https://vanilla-mobile-nixos.cachix.org"
   ];
   trusted-public-keys = [
-    "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    "vanilla-mobile-nixos.cachix.org-1:nicMQxxTD4n6PM9dCvylqsCOCA6M2C6gybbCKrei8AQ="
   ];
 };
 ```
 
-Then, just add `--option extra-substituters https://cache.garnix.io` to your build
-commands as shown below.
+Then, just add `--option extra-substituters https://vanilla-mobile-nixos.cachix.org`
+to your build commands as shown below.
 
 Build the script that will generate the images. For flakes that looks like:
-`nix build --option extra-substituters https://cache.garnix.io .#nixosConfigurations.xiaomi-beryllium.config.system.build.diskoImagesScript`
+`nix build --option extra-substituters https://vanilla-mobile-nixos.cachix.org .#nixosConfigurations.xiaomi-beryllium.config.system.build.diskoImagesScript`
 
 Now run the script. It's just `./result` if you aren't using LUKS encryption. If you
 are, you'll have to pass in the encryption password like this:
@@ -143,7 +143,7 @@ It will be flashed to your device's `boot` partition (this is different from our
 boot partition).
 
 - Build the U-Boot boot image. For flakes that looks like:
-  - `nix build --option extra-substituters https://cache.garnix.io .#nixosConfigurations.xiaomi-beryllium.config.vanilla-mobile.deviceInfo.uboot`
+  - `nix build --option extra-substituters https://vanilla-mobile-nixos.cachix.org .#nixosConfigurations.xiaomi-beryllium.config.vanilla-mobile.deviceInfo.uboot`
 - Go into fastboot mode on the phone.
 - Flash u-boot to the phone: `fastboot erase dtbo erase boot flash boot result/u-boot.img`
 - Do not reboot or power off the phone yet.
