@@ -1,0 +1,12 @@
+version: 2
+
+updates:
+  - package-ecosystem: nix # zizmor: ignore[dependabot-cooldown]
+    directory: "/"
+    schedule:
+      interval: weekly
+    # Update all flake inputs in a single PR.
+    groups:
+      inputs:
+        patterns:
+          - "*"
