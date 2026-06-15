@@ -724,7 +724,7 @@ kernel.override {
     SND_SOC_WM8960 = no;
     SND_SOC_WM8962 = no;
     USB_XHCI_PCI_RENESAS = no;
-    USB_XHCI_TEGRA = no;
+    USB_XHCI_TEGRA = lib.mkForce no;
     USB_EHCI_EXYNOS = no;
     USB_OHCI_EXYNOS = no;
     USB_RENESAS_USBHS_HCD = no;
