@@ -58,9 +58,9 @@ A great place to browse for mobile friendly apps is <http://linuxphoneapps.org/>
 ### Keyboard
 
 - [wvkbd](https://github.com/jjsullivan5196/wvkbd) is simple, compatible, and easy to
-set up.
+  set up. This repository provides a `programs.wvkbd` Home Manager module.
 - [Stevia](https://gitlab.gnome.org/World/Phosh/stevia) is featureful. I haven't
-tried to set it up independent of Phosh where it's designed for.
+  tried to set it up independent of Phosh where it's designed for.
 
 ### Terminal
 

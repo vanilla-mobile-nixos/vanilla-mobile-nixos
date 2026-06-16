@@ -1,2 +1,3 @@
 {
+  wvkbd = import ./wvkbd.nix;
 }
