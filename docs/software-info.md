@@ -21,6 +21,8 @@ The primary GNOME stack mobile desktop. A starter config is at
 Note that in the starter config, the keyboard seems to currently only show in some
 applications.
 
+See known issues and To-Do items [here](https://github.com/vanilla-mobile-nixos/vanilla-mobile-nixos/issues/4).
+
 ### Plasma Mobile
 
 Module is not in nixpkgs yet, but people have worked on it.
@@ -62,6 +64,9 @@ A great place to browse for mobile friendly apps is <http://linuxphoneapps.org/>
 - [Stevia](https://gitlab.gnome.org/World/Phosh/stevia) is featureful. I haven't
   tried to set it up independent of Phosh where it's designed for.
 
+Not all keyboards automatically toggle themselves when text fields are entered or
+left. A solution for fcitx5 users is [fcitx-virtual-keyboard-adapter](https://github.com/horriblename/fcitx-virtualkeyboard-adapter).
+
 ### Terminal
 
 There aren't many with support for touch gestures. I recommend using Alacritty.
@@ -97,3 +102,11 @@ With this enabled, you should use `vanilla-mobile.mobile-config.firefox.firefoxP
 instead of `programs.firefox.package` when you need to change the Firefox package.
 `librewolfPackage` for Librewolf.
 
+Note that if using Librewolf, websites will show their desktop version. This is because
+RFP (resist fingerprinting) disallows changing the user agent string. This will change
+if Librewolf switches to FPP (fingerprinting protection) in the future.
+
+### New/RSS
+
+[Newsflash](https://gitlab.com/news-flash/news_flash_gtk) works well, but has a couple of aspects that could use
+improvement for mobile NixOS. See known issues [here](https://github.com/vanilla-mobile-nixos/vanilla-mobile-nixos/issues/5).
