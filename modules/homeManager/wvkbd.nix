@@ -73,28 +73,27 @@ in
             '';
           };
         };
-
-        example = {
-          H = 350;
-          L = 200;
-          R = 5;
-          alpha = 240;
-          bg = "1e1e2e";
-          fg = "1e1e2e";
-          fg-sp = "1e1e2e";
-          press = "cba6f7";
-          press-sp = "cba6f7";
-          text = "cdd6f4";
-          text-sp = "cdd6f4";
-          fn = "monospace";
-        };
-
-        description = ''
-          See the <https://git.sr.ht/~proycon/wvkbd/tree/master/item/wvkbd.1.scd> for
-          available options. Don't include the `--` or `-` prefixes.
-        '';
       };
 
+      example = {
+        H = 350;
+        L = 200;
+        R = 5;
+        alpha = 240;
+        bg = "1e1e2e";
+        fg = "1e1e2e";
+        fg-sp = "1e1e2e";
+        press = "cba6f7";
+        press-sp = "cba6f7";
+        text = "cdd6f4";
+        text-sp = "cdd6f4";
+        fn = "monospace";
+      };
+
+      description = ''
+        See the <https://git.sr.ht/~proycon/wvkbd/tree/master/item/wvkbd.1.scd> for
+        available options. Don't include the `--` or `-` prefixes.
+      '';
     };
   };
 
