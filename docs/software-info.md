@@ -34,16 +34,19 @@ There's a project called Sxmo or Simple X Mobile dedicated to making these compo
 work well on mobile. I haven't tested it. You can also do it yourself similar to what I do for
 Hyprland.
 
+- Auto Screen Rotation: [iio-sway](https://github.com/okeri/iio-sway)
+
 ### Hyprland
 
 - Gestures: [hyprgrass](https://github.com/horriblename/hyprgrass)
-- Auto Rotation: [iio-hyprland](https://github.com/JeanSchoeller/iio-hyprland/)
+- Auto Screen Rotation: [iio-hyprland](https://github.com/JeanSchoeller/iio-hyprland/)
+  - The repository provides a `services.iio-hyprland` Home Manager module.
 
 ### Niri
 
 Promising for mobile. Good NixOS support. Have not tested yet.
 
-- Auto Rotation: [iio-niri](https://github.com/Zhaith-Izaliel/iio-niri)
+- Auto Screen Rotation: [iio-niri](https://github.com/Zhaith-Izaliel/iio-niri)
 
 ### Catacomb
 

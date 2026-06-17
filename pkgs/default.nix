@@ -19,6 +19,7 @@ in
   bootmac = callPackage ./bootmac { };
   unudhcpd = callPackage ./unudhcpd { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
+  iio-hyprland = callPackage ./iio-hyprland { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   msm-modem = callPackage ./msm-modem { };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
