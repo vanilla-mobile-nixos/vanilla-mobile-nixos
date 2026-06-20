@@ -59,6 +59,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Configure the MAC addresses of WLAN and Bluetooth interfaces at boot";
     mainProgram = "bootmac";
     license = lib.licenses.gpl3;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = bluez.meta.platforms;
   };
 })

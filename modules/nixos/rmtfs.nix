@@ -1,4 +1,5 @@
-self: {
+self:
+{
   config,
   lib,
   pkgs,
@@ -22,4 +23,6 @@ in
       SUBSYSTEM=="uio", ATTR{name}=="rmtfs", SYMLINK+="qcom_rmtfs_uio1"
     '';
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

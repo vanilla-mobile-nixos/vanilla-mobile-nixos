@@ -1,4 +1,5 @@
-self: {
+self:
+{
   config,
   lib,
   pkgs,
@@ -17,4 +18,6 @@ in
     systemd.packages = [ cfg.package ];
     systemd.services.tqftpserv.wantedBy = [ "multi-user.target" ];
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

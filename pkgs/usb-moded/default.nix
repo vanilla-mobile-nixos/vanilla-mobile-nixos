@@ -97,6 +97,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Daemon that activates certain USB profiles based on the USB cable connection status";
     homepag = "https://github.com/sailfishos/usb-moded";
     license = lib.licenses.gpl2Only;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;
   };
 })

@@ -39,4 +39,6 @@ in
       environment = lib.mapAttrs (name: value: toString value) cfg.settings;
     };
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

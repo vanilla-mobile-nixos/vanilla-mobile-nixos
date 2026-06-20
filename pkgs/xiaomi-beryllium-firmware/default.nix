@@ -48,6 +48,7 @@ stdenvNoCC.mkDerivation {
     description = "Firmware for Xiaomi Poco F1";
     homepage = "https://gitlab.com/sdm845-mainline/firmware-xiaomi-beryllium";
     license = lib.licenses.unfree;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.all;
   };
 }

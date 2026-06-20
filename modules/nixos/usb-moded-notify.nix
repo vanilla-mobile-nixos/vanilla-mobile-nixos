@@ -20,4 +20,6 @@ in
       wantedBy = [ "graphical-session.target" ];
     };
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

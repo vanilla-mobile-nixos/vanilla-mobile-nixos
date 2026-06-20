@@ -33,6 +33,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Firefox tweaks for mobile and privacy";
     homepage = "https://gitlab.postmarketos.org/postmarketOS/mobile-config-firefox";
     license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.all;
   };
 })

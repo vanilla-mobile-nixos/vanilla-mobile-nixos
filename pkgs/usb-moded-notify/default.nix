@@ -53,6 +53,7 @@ python3Packages.buildPythonApplication (finalAttrs: {
     description = "Handle usb-moded dialog events/switch modes using desktop notifications";
     homepage = "https://gitlab.postmarketos.org/postmarketOS/usb-moded-notify";
     license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;
   };
 })

@@ -40,4 +40,6 @@ in
     programs.firefox.package = cfg.firefoxPackage.override firefoxOverride;
     programs.librewolf.package = cfg.librewolfPackage.override firefoxOverride;
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

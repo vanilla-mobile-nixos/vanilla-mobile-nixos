@@ -39,6 +39,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Save/load real-time clock (RTC) offset for devices with a non-writable RTC";
     homepage = "https://gitlab.postmarketos.org/postmarketOS/swclock-offset";
     license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;
   };
 })

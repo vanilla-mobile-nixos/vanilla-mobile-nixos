@@ -78,4 +78,6 @@ in
     services.usb-moded-notify.enable = lib.mkDefault true;
 
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

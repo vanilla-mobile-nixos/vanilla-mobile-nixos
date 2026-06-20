@@ -103,4 +103,6 @@ in
       }
     ) cfg.appsync);
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

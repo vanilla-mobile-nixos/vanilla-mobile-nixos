@@ -34,7 +34,10 @@ kernel.override {
   argsOverride = {
     inherit version;
     modDirVersion = kernel.modDirVersion;
-    extraMeta.platforms = [ "aarch64-linux" ];
+    extraMeta = {
+      maintainers = with lib.maintainers; [ junestepp ];
+      platforms = [ "aarch64-linux" ];
+    };
   };
 
   kernelPatches = (import ./kernel-patches) ++ [

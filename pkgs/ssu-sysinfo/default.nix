@@ -32,6 +32,7 @@ stdenv.mkDerivation (finalAttrs: {
       lgpl21Plus
       bsd3
     ];
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;
   };
 })

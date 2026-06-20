@@ -33,6 +33,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     description = "ALSA UCM configuration for Qualcomm SDM845 devices";
     homepage = "https://github.com/AsahiLinux/alsa-ucm-conf-asahi";
     license = lib.licenses.bsd3;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = [ "aarch64-linux" ];
   };
 })

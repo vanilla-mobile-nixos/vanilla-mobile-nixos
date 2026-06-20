@@ -33,4 +33,6 @@ in
       serviceConfig.RemainAfterExit = true;
     };
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

@@ -47,6 +47,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Common support for Qualcomm MSM modems";
     homepage = "https://gitlab.postmarketos.org/postmarketOS/msm-modem";
     license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;
   };
 })

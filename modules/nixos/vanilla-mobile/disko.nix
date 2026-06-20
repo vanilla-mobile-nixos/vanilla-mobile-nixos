@@ -72,4 +72,6 @@ in
     # Initrd has issues with the systemd wrapper above.
     boot.initrd.systemd.package = pkgs.systemd;
   };
+
+  meta.maintainers = [ lib.maintainers.junestepp ];
 }

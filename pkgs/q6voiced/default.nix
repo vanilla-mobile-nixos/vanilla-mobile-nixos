@@ -35,6 +35,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Userspace QDSP6 voice driver daemon listing on oFono/ModemManager";
     homepage = "https://gitlab.postmarketos.org/postmarketOS/q6voiced";
     license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;
   };
 })
