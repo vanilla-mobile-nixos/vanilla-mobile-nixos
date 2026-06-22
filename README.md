@@ -1,7 +1,7 @@
 # Vanilla Mobile NixOS
 
-This is a WIP hub for instructions, modules, and packages for running standard NixOS on
-mobile devices.
+Everything you need to run standard NixOS on a mobile device.
+See device support below. Contributions welcome.
 
 ## Why run NixOS on a mobile device?
 
@@ -43,8 +43,8 @@ Implemented but untested:
     `nix-shell -p alsa-utils --run "strace alsaucm reload"`
 - SDM845 kernel with non-beryllium devices.
   - OnePlus 6 (oneplus-enchilada)
-  - OnePlus 6T 	(oneplus-fajita)
-  - Samsung Galaxy S9	(samsung-starqltechn)
+  - OnePlus 6T (oneplus-fajita)
+  - Samsung Galaxy S9 (samsung-starqltechn)
   - SHIFT SHIFT6mq (shift-axolotl)
 - Samsung Galaxy A2 Core U-Boot
 
