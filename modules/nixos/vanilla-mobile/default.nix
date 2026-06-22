@@ -37,6 +37,8 @@ in
 
   vanilla-mobile.usb-gadget.enable = lib.mkDefault true;
 
+  vanilla-mobile.powerManagement.sleepInhibitors.enableDefault = lib.mkDefault true;
+
   # Enable Modem Manager quick suspend and resume support. Without it,
   # Modem Manager will crash and not resume properly after a suspend.
   # See <https://gitlab.freedesktop.org/mobile-broadband/ModemManager/-/work_items/1039>
