@@ -54,6 +54,15 @@ in
       };
     };
 
+    nixpkgs.overlays = [
+      (final: prev: {
+        hyprlandPlugins = prev.hyprlandPlugins // {
+          # Out of date in nixpkgs due to broken package definition.
+          inherit (self.packages) hyprgrass;
+        };
+      })
+    ];
+
     # Enable Modem Manager quick suspend and resume support. Without it,
     # Modem Manager will crash and not resume properly after a suspend.
     # See <https://gitlab.freedesktop.org/mobile-broadband/ModemManager/-/work_items/1039>
