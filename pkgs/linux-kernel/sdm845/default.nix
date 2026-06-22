@@ -27,7 +27,7 @@
   ...
 }:
 let
-  kernel = linuxKernel.kernels.linux_testing;
+  kernel = linuxKernel.kernels.linux_7_1;
   version = "${kernel.version}-sdm845";
 in
 kernel.override {
@@ -951,7 +951,6 @@ kernel.override {
     INPUT_JOYDEV = module;
 
     # Compression
-    KERNEL_GZIP = yes;
     MODULE_COMPRESS = yes;
     MODULE_COMPRESS_ALL = yes;
     # NixOS sets it to XZ even though it uses ZSTD by default on modern kernels.
