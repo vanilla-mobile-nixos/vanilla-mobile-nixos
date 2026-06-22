@@ -9,9 +9,7 @@ let
 in
 {
   options.vanilla-mobile.powerManagement = {
-    enable = lib.mkEnableOption "basic power management" // {
-      default = true;
-    };
+    enable = lib.mkEnableOption "basic power management";
 
     sleepInhibitors = {
       enableDefault = lib.mkEnableOption "default sleep inhibitors";

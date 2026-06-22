@@ -29,6 +29,8 @@ in
           sensors.enable = lib.mkDefault true;
         };
 
+        vanilla-mobile.enable = true;
+
         nixpkgs.hostPlatform = "aarch64-linux";
 
         # A crude way of preventing the devices from running out of RAM or generally

@@ -22,7 +22,7 @@ in
     };
   };
 
-  config = lib.mkIf (config.disko.devices != { }) {
+  config = lib.mkIf cfg.enable {
     disko.imageBuilder = {
       imageFormat = "raw";
       # Our kernels don't have all the modules required for virtualization.
