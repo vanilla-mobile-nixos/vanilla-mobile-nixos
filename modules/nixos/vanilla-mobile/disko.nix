@@ -64,11 +64,12 @@ in
           ln -s ${pkg.man} $man
 
           wrapProgram $out/bin/bootctl --set SYSTEMD_RELAX_ESP_CHECKS 1
+
+          rm $out/example/sysctl.d/50-coredump.conf
+          substitute ${pkg}/example/sysctl.d/50-coredump.conf $out/example/sysctl.d/50-coredump.conf \
+            --replace-fail "${pkg}" "$out"
         '';
       };
-    # <https://github.com/NixOS/nixpkgs/blob/348370fcc9f71865fa1a6c090a8d588c7033fb4f/nixos/modules/system/boot/systemd/coredump.nix#L63>
-    # doesn't work with the systemd wrapper above.
-    systemd.coredump.enable = false;
     # Initrd has issues with the systemd wrapper above.
     boot.initrd.systemd.package = pkgs.systemd;
   };
