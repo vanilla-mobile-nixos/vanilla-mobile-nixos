@@ -6,14 +6,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "mobile-config-firefox";
-  version = "5.3.0";
+  version = "5.4.0";
 
   src = fetchFromGitLab {
     domain = "gitlab.postmarketos.org";
     owner = "postmarketOS";
     repo = "mobile-config-firefox";
     tag = finalAttrs.version;
-    hash = "sha256-UJYxTaYEVDi2I5tG0q1//zFZ0DOOReZOEjIJsWOhkf8=";
+    hash = "sha256-lqaNqMzZpH4np2ZvGP1W517G2kqPrDGa0Xz8SOCohkc=";
   };
 
   dontBuild = true;
