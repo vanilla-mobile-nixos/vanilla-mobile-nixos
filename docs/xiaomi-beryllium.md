@@ -145,7 +145,7 @@ boot partition).
 - Build the U-Boot boot image. For flakes that looks like:
   - `nix build --option extra-substituters https://vanilla-mobile-nixos.cachix.org .#nixosConfigurations.xiaomi-beryllium.config.vanilla-mobile.deviceInfo.uboot`
 - Go into fastboot mode on the phone.
-- Flash u-boot to the phone: `fastboot erase dtbo erase boot flash boot result/u-boot.img`
+- Flash U-Boot to the phone: `fastboot erase dtbo erase boot flash boot result/u-boot.img`
 - Do not reboot or power off the phone yet.
 
 ### NixOS Image Flashing
@@ -182,8 +182,8 @@ services.openssh = {
 ```
 
 When you want to use SSH with this, you'll first need to switch to USB developer mode
-by selecting the "Developer" option in the notification that will appear when you plug
-the phone into a computer.
+by selecting the "Developer" option in the notification that will appear on the phone
+when you plug it into a computer.
 
 ### Starter Config
 

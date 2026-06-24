@@ -29,7 +29,7 @@ The main thing that's needed for most devices is U-Boot and kernel/drivers suppo
 Below is a list of what's already in this repository. For other devices, start with
 looking at the [postmarketOS Wiki](https://wiki.postmarketos.org/wiki/Devices) and [this](https://gitlab.postmarketos.org/tauchgang/tauchgang-ci/-/blob/main/devices.toml)
 list of devices supported by Tauchgang U-Boot.
-Many of the devices that work best for Mobile Linux are older devices you can buy
+Many of the devices that work best for mobile Linux are older devices you can buy
 secondhand.
 
 Tested Devices:
