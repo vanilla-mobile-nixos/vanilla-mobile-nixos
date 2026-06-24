@@ -9,9 +9,9 @@ The first choice is what desktop environment to use:
 
 See [here](https://wiki.postmarketos.org/wiki/Category:Interface#Mobile_phones) for an
 overview with pictures of what mobile specific desktop environments are available.
-If you prefer standalone compositors and/or want to keep the one you use on Desktop,
-don't worry! It's surprisingly easy to get compositors working well. All it really
-takes are a few gestures and an on-screen keyboard.
+If you prefer standalone compositors (like I do) and/or want to keep the one you
+use on Desktop, don't worry! This repository has detailed examples for Hyprland and
+some information for other compositors as well.
 
 ### Phosh
 
@@ -30,13 +30,17 @@ See <https://github.com/NixOS/nixpkgs/issues/432702>.
 
 ### Sway or River
 
-There's a project called Sxmo or Simple X Mobile dedicated to making these compositors
-work well on mobile. I haven't tested it. You can also do it yourself similar to what I do for
-Hyprland.
+The [Hyprland](#hyprland) examples should serve as good reference.
+
+There's also a project called Sxmo or Simple X Mobile dedicated to making these compositors
+work well on mobile. I haven't tested it.
 
 - Auto Screen Rotation: [iio-sway](https://github.com/okeri/iio-sway)
 
 ### Hyprland
+
+See `examples/desktopEnvironments/hyprland` in this repository. There are detailed
+examples for mobile, gestures, idle/suspension, and device specific changes.
 
 - Gestures: [hyprgrass](https://github.com/horriblename/hyprgrass)
 - Auto Screen Rotation: [iio-hyprland](https://github.com/JeanSchoeller/iio-hyprland/)
@@ -46,7 +50,10 @@ Hyprland.
 
 Promising for mobile. Good NixOS support. Have not tested yet.
 
+The [Hyprland](#hyprland) examples should serve as good reference.
+
 - Auto Screen Rotation: [iio-niri](https://github.com/Zhaith-Izaliel/iio-niri)
+    - There's a `services.iio-niri` NixOS module.
 
 ### Catacomb
 
