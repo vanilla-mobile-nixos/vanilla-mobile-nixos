@@ -201,4 +201,6 @@ Once you've created your starter config, just send it over SSH and reboot:
   - See [here](https://wiki.postmarketos.org/wiki/Xiaomi_POCO_F1_(xiaomi-beryllium)#WiFi) for common causes.
     The 5Gz issue, can be fixed in declarative Nix NetworkManager configurations
     with `ensureProfiles.profiles.<PROFILE>.wifi.band = "bg";`.
+- Your phone may occasionally freeze with a kernel panic while booting. Just hold
+  the power button to restart it.
 
