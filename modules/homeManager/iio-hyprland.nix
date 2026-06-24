@@ -37,12 +37,13 @@ in
         assertion =
           (
             config.wayland.windowManager.hyprland.enable
-            && config.wayland.windowManager.hyprland.configType == "hyprlang"
+            && config.wayland.windowManager.hyprland.configType == "lua"
           )
-          || (!config.wayland.windowManager.hyprland.enable);
+          || (!config.wayland.windowManager.hyprland.enable)
+          || cfg.package != self.packages.iio-hyprland;
         message = ''
-          iio-hyprland doesn't support Hyprland Lua config yet.
-          See <https://github.com/JeanSchoeller/iio-hyprland/issues/41>.
+          This `iio-hyprland` package only supports Hyprland Lua configs.
+          hyprlang configs are deprecated.
         '';
       }
     ];

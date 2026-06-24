@@ -23,6 +23,12 @@ stdenv.mkDerivation {
     hash = "sha256-YTbCWQVmpshvtY//e6kPQtbn/Msbjx9NN0j0LQFzfNE=";
   };
 
+  patches = [
+    # Switch to Hyprland Lua syntax.
+    # See <https://github.com/JeanSchoeller/iio-hyprland/pull/42>.
+    ./lua-support.patch
+  ];
+
   buildInputs = [ dbus ];
   nativeBuildInputs = [
     meson
