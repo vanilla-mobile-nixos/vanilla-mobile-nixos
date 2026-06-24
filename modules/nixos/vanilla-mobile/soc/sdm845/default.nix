@@ -75,6 +75,7 @@ in
           };
         };
 
+        hardware.bluetooth.enable = lib.mkDefault true;
         # Setup Bluetooth interface MAC address.
         services.bootmac = {
           enable = true;
