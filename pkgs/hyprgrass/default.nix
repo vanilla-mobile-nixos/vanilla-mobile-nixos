@@ -2,6 +2,7 @@
   hyprgrass,
   wf-touch,
   fetchFromGitHub,
+  fetchpatch2,
 }:
 (hyprgrass.override {
   # See <https://github.com/NixOS/nixpkgs/pull/526498>.
@@ -25,7 +26,10 @@
 
       patches = prevAttrs.patches or [ ] ++ [
         # See <https://github.com/horriblename/hyprgrass/issues/391>.
-        ./workspace-swipe-edge.patch
+        (fetchpatch2 {
+          url = "https://github.com/horriblename/hyprgrass/commit/230495900cef1a5681bf8f8abf797939d1d64c1b.diff?full_index=1";
+          hash = "sha256-/YStL0sGnffO1whDAfMmtH0qO3gp2j/WPNLhrLLQpeQ=";
+        })
       ];
     }
   )

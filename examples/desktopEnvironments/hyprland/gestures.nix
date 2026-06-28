@@ -41,10 +41,17 @@ in
       config.plugin.hyprgrass = {
         sensitivity = 5.0;
         edge_margin = 30;
-        # This is deprecated upstream, but still necessary.
-        # See <https://github.com/horriblename/hyprgrass/issues/391>.
-        workspace_swipe_edge = "d";
       };
+      "plugin.hyprgrass.gesture" = [
+        {
+          pattern = {
+            kind = "edge";
+            origin = "down";
+            direction = "horizontal";
+          };
+          action = "workspace";
+        }
+      ];
       "plugin.hyprgrass.bind" = [
         {
           pattern = {
