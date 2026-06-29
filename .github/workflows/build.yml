@@ -12,10 +12,10 @@ jobs:
       # So skipped-attribute checks can be posted.
       checks: write
 
-    uses: JuneStepp/atelier/.github/workflows/discover.yaml@c8af117167b8937509dabf7af185259929639055
+    uses: JuneStepp/atelier/.github/workflows/discover.yaml@4a94601e6fa41e8fb599e5938b51e9d988b1564d
     with:
       repository: JuneStepp/atelier
-      ref: c8af117167b8937509dabf7af185259929639055
+      ref: 4a94601e6fa41e8fb599e5938b51e9d988b1564d
 
     secrets:
        CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
