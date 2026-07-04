@@ -43,4 +43,13 @@ in
         ${ubootPackages.samsung-a2corelte}/u-boot.dtb
     '';
   };
+
+  oneplus-enchilada = buildTauchgangUBoot {
+    pname = "oneplus-enchilada";
+    dtb = "qcom/sdm845-oneplus-enchilada";
+    defconfig = "qcom_defconfig qcom-phone.config";
+  };
+  oneplus-enchilada-boot-image = mkAndroidBootImage {
+    uboot = ubootPackages.oneplus-enchilada;
+  };
 }
