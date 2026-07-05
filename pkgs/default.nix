@@ -13,6 +13,7 @@ in
 
   # Firmware
   xiaomi-beryllium-firmware = callPackage ./xiaomi-beryllium-firmware { };
+  oneplus-sdm845-firmware = callPackage ./oneplus-sdm845-firmware { };
 
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
 
