@@ -31,7 +31,7 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
 
     while IFS="" read -r _i || [ -n "$_i" ]; do
-      install -Dm644 "$_i" "$out/$_i"
+      install -Dm644 "$_i" "$out/''${_i/"postmarketos"/}"
     done < "${./firmware.files}"
 
     # Files to be included to add sensor support.
@@ -53,5 +53,8 @@ stdenvNoCC.mkDerivation {
     license = lib.licenses.unfree;
     maintainers = with lib.maintainers; [ kwaa ];
     platforms = lib.platforms.all;
+    # Firmware that was originally prefixed with `postmarketos/` needs to overwrite
+    # `linux-firmware`.
+    priority = 7;
   };
 }
