@@ -134,6 +134,8 @@ in
           };
         };
         security.pam.services.sshd.allowNullPassword = lib.mkImageMediaOverride true;
+        # Don't fail if USB network isn't up yet.
+        systemd.sockets.sshd.socketConfig.FreeBind = lib.mkIf config.services.openssh.startWhenNeeded true;
 
         # Support connections from many terminals.
         environment.enableAllTerminfo = true;
