@@ -60,7 +60,7 @@ Here's a simple example of that for flakes:
     disko = {
       # Use disko fork until this PR is merged:
       # <https://github.com/nix-community/disko/pull/1008>
-      url = "github:JuneStepp/disko/virtual-devices-option";
+      url = "github:JuneStepp/disko/mobile";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
