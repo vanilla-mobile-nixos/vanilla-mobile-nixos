@@ -89,9 +89,9 @@ in
           initialHashedPassword = "";
         };
         # Allow the user to log in as root without a password.
-        users.users.root.initialHashedPassword = "";
+        users.users.root.initialHashedPassword = lib.mkImageMediaOverride "";
         # Allow passwordless sudo.
-        security.sudo.wheelNeedsPassword = false;
+        security.sudo.wheelNeedsPassword = lib.mkImageMediaOverride false;
 
         # Automatically log in at the virtual consoles.
         services.getty.autologinUser = "nixos";
@@ -119,7 +119,7 @@ in
         services.openssh = {
           enable = true;
           # We're making it easy to SSH in, but only over USB.
-          openFirewall = false;
+          openFirewall = lib.mkImageMediaOverride false;
           listenAddresses = [
             {
               addr = config.vanilla-mobile.usb-gadget.network.serverAddress;
@@ -127,11 +127,13 @@ in
           ];
           settings = {
             # Root login makes installation simpler.
-            PermitRootLogin = "yes";
-            PermitEmptyPasswords = "yes";
+            PermitRootLogin = lib.mkImageMediaOverride "yes";
+            PasswordAuthentication = lib.mkImageMediaOverride true;
+            PermitEmptyPasswords = lib.mkImageMediaOverride true;
+            UsePAM = lib.mkImageMediaOverride true;
           };
         };
-        security.pam.services.sshd.allowNullPassword = true;
+        security.pam.services.sshd.allowNullPassword = lib.mkImageMediaOverride true;
 
         # Support connections from many terminals.
         environment.enableAllTerminfo = true;
