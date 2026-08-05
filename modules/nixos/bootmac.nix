@@ -11,7 +11,7 @@ in
 {
   options.services.bootmac = {
     enable = lib.mkEnableOption "bootmac";
-    package = lib.mkPackageOption self.packages "bootmac" { };
+    package = lib.mkPackageOption pkgs "bootmac" { };
 
     bluetooth.enable = lib.mkEnableOption "bluetooth";
     wifi.enable = lib.mkEnableOption "wifi";

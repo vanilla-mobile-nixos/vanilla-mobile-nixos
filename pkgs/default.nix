@@ -17,7 +17,6 @@ in
 
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
 
-  bootmac = callPackage ./bootmac { };
   unudhcpd = callPackage ./unudhcpd { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
   hyprgrass = callPackage ./hyprgrass { inherit (pkgs.hyprlandPlugins) hyprgrass; };
