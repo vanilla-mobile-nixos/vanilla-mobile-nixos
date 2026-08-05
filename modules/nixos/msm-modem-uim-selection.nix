@@ -2,6 +2,7 @@ self:
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -10,7 +11,7 @@ in
 {
   options.services.msm-modem-uim-selection = {
     enable = lib.mkEnableOption "Qualcomm MSM modems UIM selection service";
-    package = lib.mkPackageOption self.packages "msm-modem" { };
+    package = lib.mkPackageOption pkgs "msm-modem" { };
     simWaitTime = lib.mkOption {
       type = with lib.types; nullOr ints.unsigned;
       default = null;
