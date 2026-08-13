@@ -71,6 +71,54 @@
           --kernel u-boot.bin.gz \
           -o $out/u-boot.img
       '';
+
+  # For devices whose devices.toml entry sets
+  # android_bootimg_header_version = 2, such as fairphone-fp5.
+  #
+  # Header version 2 carries the device tree in a section of its own, so the
+  # DTB goes in with --dtb instead of being concatenated onto the kernel the
+  # way the header-v0 builder above does it. The offsets come from the
+  # device's pmaports deviceinfo.
+  mkAndroidBootImageV2 =
+    {
+      uboot,
+      page_size ? 4096,
+      ramdisk_offset ? "0x01000000",
+      second_offset ? "0x00000000",
+      tags_offset ? "0x00000100",
+      dtb_offset ? "0x01f00000",
+    }:
+    buildPackages.runCommand "${uboot.pname}-boot-image"
+      {
+        meta = {
+          inherit (uboot.meta) license;
+        };
+      }
+      ''
+        gzip ${uboot}/u-boot-nodtb.bin -c > u-boot-nodtb.bin.gz
+
+        # Make an empty gzip archive to use as the ramdisk.
+        # Tauchgang does this "to make more compatible android boot images".
+        printf "\0" | gzip --stdout > "empty.gz"
+
+        mkdir -p $out
+
+        ${lib.getExe' buildPackages.android-tools "mkbootimg"} \
+          --header_version 2 \
+          --base 0x0 \
+          --kernel_offset 0x8000 \
+          --ramdisk_offset ${ramdisk_offset} \
+          --second_offset ${second_offset} \
+          --tags_offset ${tags_offset} \
+          --dtb_offset ${dtb_offset} \
+          --pagesize ${toString page_size} \
+          --os_patch_level 2028-09-21 \
+          --ramdisk empty.gz \
+          --kernel u-boot-nodtb.bin.gz \
+          --dtb ${uboot}/u-boot.dtb \
+          -o $out/u-boot.img
+      '';
+
   mkAndroidBootImageQCDT =
     {
       uboot,

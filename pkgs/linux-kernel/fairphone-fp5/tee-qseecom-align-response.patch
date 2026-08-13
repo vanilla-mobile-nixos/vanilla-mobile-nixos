@@ -1,0 +1,83 @@
+diff --git a/drivers/tee/qseecom/core.c b/drivers/tee/qseecom/core.c
+index 402ba887e47f..65e2dc7887ad 100644
+--- a/drivers/tee/qseecom/core.c
++++ b/drivers/tee/qseecom/core.c
+@@ -73,6 +73,15 @@
+  */
+ #define QSEECOM_TEE_MAX_XFER		SZ_16M
+ 
++/*
++ * Alignment of the response area within the staging buffer. TZ refuses an
++ * invoke whose request is 16 bytes or more with "invalid argument", and takes
++ * the same request one byte shorter, so it is objecting to where the response
++ * begins rather than to the request's length. The vendor's own client puts the
++ * two regions of its shared buffer on page boundaries, so do the same.
++ */
++#define QSEECOM_TEE_XFER_ALIGN		PAGE_SIZE
++
+ /* Sanity bound on an application image, so a bad size cannot exhaust memory. */
+ #define QSEECOM_TEE_MAX_IMAGE		SZ_16M
+ 
+@@ -858,7 +867,7 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 			.policy = QCOM_TZMEM_POLICY_STATIC,
+ 		};
+ 		struct qcom_tzmem_pool *bp;
+-		size_t need, off;
++		size_t need, off, rsp_off;
+ 		void *b;
+ 		unsigned int k;
+ 
+@@ -869,7 +878,19 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 		 * that user space has mapped are written through a cacheable
+ 		 * alias, and TZ does not see those writes.
+ 		 */
+-		need = req_size + rsp_size;
++
++		/*
++		 * The response starts on a page boundary rather than
++		 * immediately after the request: TZ refuses a request of 16
++		 * bytes or more when the two abut, and takes the same request
++		 * one byte shorter, so what it objects to is where the
++		 * response lands. The vendor client's own buffer is laid out
++		 * the same way, request region then response region, each
++		 * page aligned.
++		 */
++		rsp_off = ALIGN(req_size, QSEECOM_TEE_XFER_ALIGN);
++
++		need = rsp_off + rsp_size;
+ 		for (k = 2; k < arg->num_params; k += 2)
+ 			need += param[k + 1].u.memref.size;
+ 
+@@ -879,7 +900,7 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 		 * staging buffer is sized from, and a wrapped total would size
+ 		 * it far too small for the copies that follow.
+ 		 */
+-		if (need < req_size || need > QSEECOM_TEE_MAX_XFER)
++		if (need < rsp_off || need > QSEECOM_TEE_MAX_XFER)
+ 			return -EINVAL;
+ 
+ 		bc.initial_size = PAGE_ALIGN(need) + PAGE_SIZE;
+@@ -899,7 +920,7 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 		memcpy(b, req, req_size);
+ 
+ 		/* Copy each patched buffer in and repoint the request at it. */
+-		off = PAGE_ALIGN(req_size + rsp_size);
++		off = PAGE_ALIGN(rsp_off + rsp_size);
+ 		for (k = 2; k < arg->num_params; k += 2) {
+ 			struct tee_shm *pshm = param[k + 1].u.memref.shm;
+ 			size_t plen = param[k + 1].u.memref.size;
+@@ -950,11 +971,11 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 		}
+ 
+ 		ret = qcom_scm_qseecom_app_send(app_id, b, req_size,
+-						b + req_size, rsp_size);
++						b + rsp_off, rsp_size);
+ 		if (!ret) {
+-			memcpy(rsp, b + req_size, rsp_size);
++			memcpy(rsp, b + rsp_off, rsp_size);
+ 
+-			off = PAGE_ALIGN(req_size + rsp_size);
++			off = PAGE_ALIGN(rsp_off + rsp_size);
+ 			for (k = 2; k < arg->num_params; k += 2) {
+ 				struct tee_shm *pshm = param[k + 1].u.memref.shm;
+ 				size_t plen = param[k + 1].u.memref.size;

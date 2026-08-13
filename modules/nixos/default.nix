@@ -2,6 +2,7 @@
   bootmac = import ./bootmac.nix;
   hexagonrpcd = import ./hexagonrpcd.nix;
   msm-modem-uim-selection = import ./msm-modem-uim-selection.nix;
+  pd-mapper = import ./pd-mapper.nix;
   rmtfs = import ./rmtfs.nix;
   swclock-offset = import ./swclock-offset.nix;
   tqftpserv = import ./tqftpserv.nix;

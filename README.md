@@ -35,6 +35,9 @@ secondhand.
 Tested Devices:
 - [Xiaomi POCO F1 Tianma (xiaomi-beryllium)](docs/xiaomi-beryllium.md)
   - SIM card currently untested.
+- [Fairphone 5 (fairphone-fp5)](docs/fairphone-fp5.md)
+  - SIM card currently untested.
+  - Main camera driver needed.
 
 Implemented but untested:
 - Xiaomi POCO F1 EBBG

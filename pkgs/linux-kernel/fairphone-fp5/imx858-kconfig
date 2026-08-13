@@ -1,0 +1,8 @@
+config VIDEO_IMX858
+	tristate "Sony IMX858 sensor support"
+	depends on OF_GPIO
+	select V4L2_CCI_I2C
+	help
+	  This is a Video4Linux2 sensor driver for the Sony
+	  IMX858 camera.
+

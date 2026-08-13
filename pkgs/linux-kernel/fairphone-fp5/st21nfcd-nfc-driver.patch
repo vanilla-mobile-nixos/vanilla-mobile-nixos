@@ -1,0 +1,471 @@
+diff -ruN a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts	2026-08-12 05:10:35.298542656 -0600
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts	2026-08-12 05:10:49.910729936 -0600
+@@ -908,8 +908,21 @@
+ &i2c9 {
+ 	status = "okay";
+ 
+-	/* ST21NFC NFC @ 28 */
+ 	/* VL53L3 ToF @ 29 */
++
++	nfc@8 {
++		compatible = "st,st21nfcd-i2c";
++		reg = <0x08>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
++
++		/* Physically high = run, low = held in reset */
++		reset-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
++
++		clocks = <&rpmhcc RPMH_LN_BB_CLK2>;
++		clock-names = "nfc_ref_clk";
++	};
+ };
+ 
+ &ipa {
+diff -ruN a/drivers/nfc/Kconfig b/drivers/nfc/Kconfig
+--- a/drivers/nfc/Kconfig	2026-08-12 05:10:35.296542630 -0600
++++ b/drivers/nfc/Kconfig	2026-08-12 05:10:43.658649805 -0600
+@@ -18,6 +18,18 @@
+ 	  say M  to compile it as a module. The module will be called
+ 	  trf7970a.ko.
+ 
++config NFC_ST21NFCD_I2C
++	tristate "STMicroelectronics ST21NFCD NCI NFC driver (I2C)"
++	depends on NFC_NCI && I2C
++	help
++	  This enables support for ST21NFCD/ST54-generation ST NFC
++	  controllers connected over I2C and speaking raw NCI (without the
++	  NDLC framing the older st-nci driver expects).
++
++	  Say Y here to compile support for ST21NFCD into the kernel or
++	  say M to compile it as a module. The module will be called
++	  st21nfcd.ko.
++
+ config NFC_MEI_PHY
+ 	tristate "MEI bus NFC device support"
+ 	depends on INTEL_MEI && NFC_HCI
+diff -ruN a/drivers/nfc/Makefile b/drivers/nfc/Makefile
+--- a/drivers/nfc/Makefile	2026-08-12 05:10:35.297542643 -0600
++++ b/drivers/nfc/Makefile	2026-08-12 05:10:45.800677259 -0600
+@@ -18,3 +18,4 @@
+ obj-$(CONFIG_NFC_S3FWRN5)	+= s3fwrn5/
+ obj-$(CONFIG_NFC_ST95HF)	+= st95hf/
+ obj-$(CONFIG_NFC_VIRTUAL_NCI)	+= virtual_ncidev.o
++obj-$(CONFIG_NFC_ST21NFCD_I2C)	+= st21nfcd.o
+diff -ruN a/drivers/nfc/st21nfcd.c b/drivers/nfc/st21nfcd.c
+--- a/drivers/nfc/st21nfcd.c	1969-12-31 17:00:00.000000000 -0700
++++ b/drivers/nfc/st21nfcd.c	2026-08-12 13:22:35.778744408 -0600
+@@ -0,0 +1,411 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * I2C driver for ST21NFCD/ST54-generation STMicroelectronics NFC
++ * controllers speaking raw NCI (no NDLC framing, unlike st-nci).
++ *
++ * The controller emits an unsolicited CORE_RESET_NTF when its reset line
++ * is released, and NAKs the first I2C transfer after standby (the
++ * address ping wakes it) -- both behaviours are handled here.
++ *
++ * Modeled on the nxp-nci I2C driver.
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/nfc.h>
++#include <linux/of.h>
++
++#include <net/nfc/nci_core.h>
++
++#define ST21NFCD_DRIVER_NAME "st21nfcd_i2c"
++
++#define ST21NFCD_NFC_PROTOCOLS (NFC_PROTO_JEWEL_MASK | \
++				NFC_PROTO_MIFARE_MASK | \
++				NFC_PROTO_FELICA_MASK | \
++				NFC_PROTO_ISO14443_MASK | \
++				NFC_PROTO_ISO14443_B_MASK | \
++				NFC_PROTO_ISO15693_MASK | \
++				NFC_PROTO_NFC_DEP_MASK)
++
++/* Time for the controller to boot after reset release */
++#define ST21NFCD_BOOT_DELAY_MS	20
++/* Delay before retrying a transfer that NAKed because of standby wake */
++#define ST21NFCD_WAKE_DELAY_MS	15
++
++struct st21nfcd_phy {
++	struct i2c_client *i2c_dev;
++	struct nci_dev *ndev;
++
++	struct gpio_desc *gpiod_reset;
++	struct clk *ref_clk;
++
++	/* Serializes reset state changes against the IRQ read path */
++	struct mutex lock;
++	bool running;
++};
++
++/* The controller pads its I2C read stream with fill bytes between frames */
++#define ST21NFCD_FILL_BYTE	0x7e
++/* Fill runs observed on hardware are a few bytes; bound the resync scan */
++#define ST21NFCD_MAX_FILL	32
++
++static int st21nfcd_i2c_read_frame(struct st21nfcd_phy *phy,
++				   struct sk_buff **skb)
++{
++	struct nci_ctrl_hdr header; /* May actually be a data header */
++	struct i2c_client *client = phy->i2c_dev;
++	u8 *hdr = (u8 *)&header;
++	int fill = 0;
++	int r;
++
++	/*
++	 * Resynchronize on the frame start: skip inter-frame fill bytes,
++	 * one at a time so a fill run cannot swallow a real header. Once a
++	 * non-fill byte is seen the rest of the frame is contiguous.
++	 */
++	do {
++		r = i2c_master_recv(client, hdr, 1);
++		if (r < 0)
++			return r;
++		else if (r != 1)
++			return -EBADMSG;
++
++		if (hdr[0] != ST21NFCD_FILL_BYTE)
++			break;
++	} while (++fill < ST21NFCD_MAX_FILL);
++
++	if (hdr[0] == ST21NFCD_FILL_BYTE)
++		return -EAGAIN; /* nothing but fill: no frame pending */
++
++	r = i2c_master_recv(client, &hdr[1], NCI_CTRL_HDR_SIZE - 1);
++	if (r < 0) {
++		return r;
++	} else if (r != NCI_CTRL_HDR_SIZE - 1) {
++		nfc_err(&client->dev, "Incorrect header length: %u\n", r);
++		return -EBADMSG;
++	}
++
++	*skb = alloc_skb(NCI_CTRL_HDR_SIZE + header.plen, GFP_KERNEL);
++	if (*skb == NULL)
++		return -ENOMEM;
++
++	skb_put_data(*skb, (void *)&header, NCI_CTRL_HDR_SIZE);
++
++	if (!header.plen)
++		return 0;
++
++	r = i2c_master_recv(client, skb_put(*skb, header.plen), header.plen);
++	if (r < 0) {
++		goto read_exit_free_skb;
++	} else if (r != header.plen) {
++		nfc_err(&client->dev,
++			"Invalid frame payload length: %u (expected %u)\n",
++			r, header.plen);
++		r = -EBADMSG;
++		goto read_exit_free_skb;
++	}
++
++	return 0;
++
++read_exit_free_skb:
++	kfree_skb(*skb);
++	*skb = NULL;
++	return r;
++}
++
++/*
++ * On reset release the controller queues an unsolicited CORE_RESET_NTF.
++ * Consume whatever sits in its buffer so the NCI core's own reset
++ * handshake starts from a clean slate. Reads NAK once nothing is
++ * pending, which ends the loop.
++ */
++static void st21nfcd_i2c_drain(struct st21nfcd_phy *phy)
++{
++	struct sk_buff *skb;
++	int i;
++
++	for (i = 0; i < 4; i++) {
++		skb = NULL;
++		if (st21nfcd_i2c_read_frame(phy, &skb) < 0)
++			break;
++		kfree_skb(skb);
++	}
++}
++
++static int st21nfcd_open(struct nci_dev *ndev)
++{
++	struct st21nfcd_phy *phy = nci_get_drvdata(ndev);
++	int r;
++
++	mutex_lock(&phy->lock);
++
++	r = clk_prepare_enable(phy->ref_clk);
++	if (r < 0)
++		goto exit;
++
++	gpiod_set_value_cansleep(phy->gpiod_reset, 0);
++	msleep(ST21NFCD_BOOT_DELAY_MS);
++
++	st21nfcd_i2c_drain(phy);
++	phy->running = true;
++
++exit:
++	mutex_unlock(&phy->lock);
++	return r;
++}
++
++static int st21nfcd_close(struct nci_dev *ndev)
++{
++	struct st21nfcd_phy *phy = nci_get_drvdata(ndev);
++
++	mutex_lock(&phy->lock);
++
++	phy->running = false;
++	gpiod_set_value_cansleep(phy->gpiod_reset, 1);
++	clk_disable_unprepare(phy->ref_clk);
++
++	mutex_unlock(&phy->lock);
++	return 0;
++}
++
++static int st21nfcd_send(struct nci_dev *ndev, struct sk_buff *skb)
++{
++	struct st21nfcd_phy *phy = nci_get_drvdata(ndev);
++	struct i2c_client *client = phy->i2c_dev;
++	int r;
++
++	if (!phy->running) {
++		kfree_skb(skb);
++		return -EINVAL;
++	}
++
++	r = i2c_master_send(client, skb->data, skb->len);
++	if (r < 0) {
++		/* The address ping woke the chip from standby; retry */
++		msleep(ST21NFCD_WAKE_DELAY_MS);
++		r = i2c_master_send(client, skb->data, skb->len);
++	}
++	if (r < 0) {
++		msleep(100);
++		r = i2c_master_send(client, skb->data, skb->len);
++	}
++
++	if (r < 0) {
++		nfc_err(&client->dev, "Error %d on I2C send\n", r);
++		kfree_skb(skb);
++		return r;
++	} else if (r != skb->len) {
++		nfc_err(&client->dev,
++			"Invalid length sent: %u (expected %u)\n",
++			r, skb->len);
++		kfree_skb(skb);
++		return -EREMOTEIO;
++	}
++
++	consume_skb(skb);
++	return 0;
++}
++
++/*
++ * The controller boots into hibernate with its NFC/RF machinery off and
++ * rejects every RF_DISCOVER until the proprietary "NFC mode set" command
++ * enables it. Per the vendor HAL (ExitHibernateHandler in hal_fd.cc), the
++ * command is only accepted AFTER CORE_INIT; the controller then leaves
++ * hibernate by resetting itself (CORE_RESET_NTF with reset trigger 0xa0)
++ * and must be initialized a second time.
++ */
++#define ST21NFCD_PROP_NFC_MODE_SET	0x02
++
++static int st21nfcd_prop_nfc_mode_set_rsp(struct nci_dev *ndev,
++					  struct sk_buff *skb)
++{
++	__u8 status = skb->data[0];
++
++	nci_req_complete(ndev, status);
++	return 0;
++}
++
++static const struct nci_driver_ops st21nfcd_prop_ops[] = {
++	{
++		.opcode = nci_opcode_pack(NCI_GID_PROPRIETARY,
++					  ST21NFCD_PROP_NFC_MODE_SET),
++		.rsp = st21nfcd_prop_nfc_mode_set_rsp,
++	},
++};
++
++static int st21nfcd_post_setup(struct nci_dev *ndev)
++{
++	static const __u8 mode_on[] = { 0x02, 0x01 };
++	int r;
++
++	r = nci_prop_cmd(ndev, ST21NFCD_PROP_NFC_MODE_SET,
++			 sizeof(mode_on), mode_on);
++	if (r) {
++		pr_err(ST21NFCD_DRIVER_NAME ": NFC mode set failed: %d\n", r);
++		return r;
++	}
++
++	/* Wait for the self-reset that ends hibernate before initializing
++	 * the freshly woken controller. nci_core_init() cannot be used for
++	 * this: it always sends the NCI 1.0 zero-length CORE_INIT, which a
++	 * 2.0 controller answers with a syntax error.
++	 */
++	msleep(500);
++
++	{
++		static const struct nci_core_init_v2_cmd init_v2 = {
++			.feature1 = NCI_FEATURE_DISABLE,
++			.feature2 = NCI_FEATURE_DISABLE,
++		};
++
++		return nci_core_cmd(ndev, NCI_OP_CORE_INIT_CMD,
++				    sizeof(init_v2), (const __u8 *)&init_v2);
++	}
++}
++
++static const struct nci_ops st21nfcd_nci_ops = {
++	.open = st21nfcd_open,
++	.close = st21nfcd_close,
++	.send = st21nfcd_send,
++	.post_setup = st21nfcd_post_setup,
++	.prop_ops = st21nfcd_prop_ops,
++	.n_prop_ops = ARRAY_SIZE(st21nfcd_prop_ops),
++};
++
++static irqreturn_t st21nfcd_irq_thread_fn(int irq, void *phy_id)
++{
++	struct st21nfcd_phy *phy = phy_id;
++	struct sk_buff *skb = NULL;
++	int r;
++
++	mutex_lock(&phy->lock);
++
++	if (!phy->running) {
++		mutex_unlock(&phy->lock);
++		return IRQ_HANDLED;
++	}
++
++	r = st21nfcd_i2c_read_frame(phy, &skb);
++	mutex_unlock(&phy->lock);
++
++	if (r == -EAGAIN) /* interrupt raced a fill-only stretch */
++		return IRQ_HANDLED;
++	if (r < 0) {
++		nfc_err(&phy->i2c_dev->dev, "Read failed with error %d\n", r);
++		return IRQ_HANDLED;
++	}
++
++	nci_recv_frame(phy->ndev, skb);
++
++	return IRQ_HANDLED;
++}
++
++static int st21nfcd_i2c_probe(struct i2c_client *client)
++{
++	struct device *dev = &client->dev;
++	struct st21nfcd_phy *phy;
++	unsigned long irqflags;
++	int r;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++		nfc_err(dev, "Need I2C_FUNC_I2C\n");
++		return -ENODEV;
++	}
++
++	phy = devm_kzalloc(dev, sizeof(*phy), GFP_KERNEL);
++	if (!phy)
++		return -ENOMEM;
++
++	phy->i2c_dev = client;
++	mutex_init(&phy->lock);
++	i2c_set_clientdata(client, phy);
++
++	/* Requested asserted: the controller stays off until open() */
++	phy->gpiod_reset = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
++	if (IS_ERR(phy->gpiod_reset)) {
++		nfc_err(dev, "Failed to get reset gpio\n");
++		return PTR_ERR(phy->gpiod_reset);
++	}
++
++	phy->ref_clk = devm_clk_get_optional(dev, "nfc_ref_clk");
++	if (IS_ERR(phy->ref_clk)) {
++		nfc_err(dev, "Failed to get ref clock\n");
++		return PTR_ERR(phy->ref_clk);
++	}
++
++	phy->ndev = nci_allocate_device(&st21nfcd_nci_ops,
++					ST21NFCD_NFC_PROTOCOLS,
++					NCI_CTRL_HDR_SIZE, 0);
++	if (!phy->ndev)
++		return -ENOMEM;
++
++	nci_set_parent_dev(phy->ndev, dev);
++	nci_set_drvdata(phy->ndev, phy);
++
++	r = nci_register_device(phy->ndev);
++	if (r < 0)
++		goto err_free_ndev;
++
++	irqflags = irq_get_trigger_type(client->irq);
++	if (!irqflags)
++		irqflags = IRQF_TRIGGER_HIGH;
++
++	r = request_threaded_irq(client->irq, NULL, st21nfcd_irq_thread_fn,
++				 irqflags | IRQF_ONESHOT,
++				 ST21NFCD_DRIVER_NAME, phy);
++	if (r < 0) {
++		nfc_err(dev, "Unable to register IRQ handler\n");
++		goto err_unregister;
++	}
++
++	return 0;
++
++err_unregister:
++	nci_unregister_device(phy->ndev);
++err_free_ndev:
++	nci_free_device(phy->ndev);
++	return r;
++}
++
++static void st21nfcd_i2c_remove(struct i2c_client *client)
++{
++	struct st21nfcd_phy *phy = i2c_get_clientdata(client);
++
++	free_irq(client->irq, phy);
++	nci_unregister_device(phy->ndev);
++	nci_free_device(phy->ndev);
++	gpiod_set_value_cansleep(phy->gpiod_reset, 1);
++}
++
++static const struct i2c_device_id st21nfcd_i2c_id_table[] = {
++	{ "st21nfcd_i2c" },
++	{}
++};
++MODULE_DEVICE_TABLE(i2c, st21nfcd_i2c_id_table);
++
++static const struct of_device_id of_st21nfcd_i2c_match[] = {
++	{ .compatible = "st,st21nfcd-i2c", },
++	{}
++};
++MODULE_DEVICE_TABLE(of, of_st21nfcd_i2c_match);
++
++static struct i2c_driver st21nfcd_i2c_driver = {
++	.driver = {
++		.name = ST21NFCD_DRIVER_NAME,
++		.of_match_table = of_st21nfcd_i2c_match,
++	},
++	.probe = st21nfcd_i2c_probe,
++	.id_table = st21nfcd_i2c_id_table,
++	.remove = st21nfcd_i2c_remove,
++};
++
++module_i2c_driver(st21nfcd_i2c_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("I2C driver for ST21NFCD NFC controllers (raw NCI)");

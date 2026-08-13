@@ -10,9 +10,31 @@
   dtbtool-exynos,
 }:
 let
-  inherit (ubootUtils) buildTauchgangUBoot mkAndroidBootImage mkAndroidBootImageQCDT;
+  inherit (ubootUtils)
+    buildTauchgangUBoot
+    mkAndroidBootImage
+    mkAndroidBootImageV2
+    mkAndroidBootImageQCDT
+    ;
 in
 {
+  # devices.toml:
+  #   name = "Fairphone 5"
+  #   maintainer = "Luca Weiss <lucaweiss@tauchgang.dev>"
+  #   dtb = "qcom/qcm6490-fairphone-fp5"
+  #   defconfig = "qcom_defconfig qcom-phone.config"
+  #   android_bootimg_header_version = 2
+  #   build_style = "qcom-phone"
+  fairphone-fp5 = buildTauchgangUBoot {
+    pname = "fairphone-fp5";
+    dtb = "qcom/qcm6490-fairphone-fp5";
+    defconfig = "qcom_defconfig qcom-phone.config";
+  };
+  # Unlike the sdm845 devices below, this one wants header version 2.
+  fairphone-fp5-boot-image = mkAndroidBootImageV2 {
+    uboot = ubootPackages.fairphone-fp5;
+  };
+
   xiaomi-beryllium-tianma = buildTauchgangUBoot {
     pname = "xiaomi-beryllium-tianma";
     dtb = "qcom/sdm845-xiaomi-beryllium-tianma";

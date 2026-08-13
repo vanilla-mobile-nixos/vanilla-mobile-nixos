@@ -1,0 +1,23 @@
+diff --git a/drivers/tee/qseecom/core.c b/drivers/tee/qseecom/core.c
+index 65e2dc7887ad..db82bae611f1 100644
+--- a/drivers/tee/qseecom/core.c
++++ b/drivers/tee/qseecom/core.c
+@@ -975,6 +975,18 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 		if (!ret) {
+ 			memcpy(rsp, b + rsp_off, rsp_size);
+ 
++			/*
++			 * An application may answer in the request rather than
++			 * in the response: the Goodix and FocalTech ones both
++			 * treat the buffer they were handed as theirs to write
++			 * back into, and a client that only reads the response
++			 * never sees that answer. Copy the request back when
++			 * the caller asked for it by passing an inout memref.
++			 */
++			if ((param[0].attr & TEE_IOCTL_PARAM_ATTR_TYPE_MASK) ==
++			    TEE_IOCTL_PARAM_ATTR_TYPE_MEMREF_INOUT)
++				memcpy(req, b, req_size);
++
+ 			off = PAGE_ALIGN(rsp_off + rsp_size);
+ 			for (k = 2; k < arg->num_params; k += 2) {
+ 				struct tee_shm *pshm = param[k + 1].u.memref.shm;

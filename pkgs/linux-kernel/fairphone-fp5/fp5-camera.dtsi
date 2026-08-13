@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Fairphone 5 rear camera (Sony IMX858), from sc7280-mainline's
+ * qcm6490-fairphone-fp5.dts. Needs the out-of-tree imx858 driver. Mainline
+ * carries the front camera wiring and leaves a comment placeholder where this
+ * sensor node goes.
+ *
+ * It also carries the actuator *node* -- camera_imx858_dw9800k, compatible
+ * "dongwoon,dw9800k" -- but no driver matches that compatible, so the lens
+ * never binds and focus is fixed. The sensor itself probes regardless.
+ *
+ * Label references only, so this does not depend on line numbers. A renamed
+ * or dropped label fails in dtc rather than silently losing the camera.
+ */
+
+&cci0_i2c1 {
+	camera@29 {
+		compatible = "sony,imx858";
+		reg = <0x29>;
+
+		vdig-supply = <&vreg_l1p>;
+		vana-supply = <&vreg_l4p>;
+		vif-supply = <&vreg_l6p>;
+
+		clocks = <&camcc CAM_CC_MCLK1_CLK>;
+		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
+		assigned-clock-rates = <24000000>;
+
+		reset-gpios = <&tlmm 21 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&cam_mclk1_default>;
+		pinctrl-names = "default";
+
+		orientation = <1>; /* Rear facing */
+		rotation = <270>;
+
+		lens-focus = <&camera_imx858_dw9800k>;
+
+		port {
+			camera_imx858_ep: endpoint {
+				data-lanes = <1 2 3 4>;
+				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
+				link-frequencies = /bits/ 64 <600000000>;
+				remote-endpoint = <&csiphy1_ep>;
+			};
+		};
+	};
+};
+
+&camss {
+	ports {
+		port@1 {
+			csiphy1_ep: endpoint {
+				clock-lanes = <7>;
+				data-lanes = <0 1 2 3>;
+				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
+				remote-endpoint = <&camera_imx858_ep>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	cam_mclk1_default: cam-mclk1-default-state {
+		pins = "gpio65";
+		function = "cam_mclk";
+		drive-strength = <2>;
+		bias-disable;
+	};
+};

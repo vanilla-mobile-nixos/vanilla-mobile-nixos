@@ -1,0 +1,41 @@
+arm64: dts: qcom: qcm6490-fairphone-fp5: give USB_REDRIVE_1V8 a startup delay
+
+USB_REDRIVE_1V8 supplies the PTN36502 Type-C DisplayPort redriver on i2c-4.
+The rail is regulator-boot-on, so the bootloader leaves it powered, and
+ptn36502 normally probes while it is still up.
+
+If ptn36502 probes later than the regulator core's unused-regulator sweep
+(observed at 31.7s: "refgen: disabling"), the rail has already been powered
+off. ptn36502_probe then enables it and reads the chip ID immediately, with no
+settling time, and the chip does not ACK:
+
+  ptn36502 4-001a: error -ENXIO: Failed to read chip ID
+
+The failure cascades: without the redriver, pmic_glink_altmode cannot acquire
+its retimer-switch, the DRM aux bridge is never registered, and
+displayport-controller@ae90000 never probes. Because the DP controller is a
+required component of the DPU aggregate, the msm DRM device never binds and
+the *internal* DSI panel stays dark -- the device boots to a black screen with
+everything else running.
+
+Whether ptn36502 probes before or after 31.7s depends on how long stage-2
+takes to start, so this presents as an intermittent black screen: it reliably
+bit the first boot after a flash, where the initial mount and grow of a fresh
+214G btrfs root delayed stage-2 to ~148s, and did not bite subsequent boots
+that reached stage-2 in ~30s.
+
+Describe the settling time in the regulator so the core waits after enabling
+it. 10ms is conservative; the neighbouring VTOF_LDO_2P8 in this file uses
+regulator-enable-ramp-delay for the same purpose.
+
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -191,6 +191,8 @@
+ 		vin-supply = <&vreg_bob>;
+
+ 		regulator-boot-on;
++
++		startup-delay-us = <10000>;
+
+ 		pinctrl-0 = <&usb_redrive_1v8_en_default>;
+ 		pinctrl-names = "default";

@@ -7,4 +7,5 @@ lib.concatMapAttrs
   })
   {
     linux_sdm845 = pkgs.callPackage ./sdm845 { };
+    linux_fairphone_fp5 = pkgs.callPackage ./fairphone-fp5 { };
   }

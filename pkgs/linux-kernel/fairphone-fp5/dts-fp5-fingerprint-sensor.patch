@@ -1,0 +1,76 @@
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 29d6265a123d..ff02ab6e7f64 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -239,6 +239,29 @@ vreg_vtof_ldo_2p8: regulator-vtof-ldo-2p8 {
+ 		vin-supply = <&vreg_bob>;
+ 	};
+ 
++	fingerprint {
++		compatible = "focaltech,ft9362";
++		interrupts-extended = <&tlmm 34 IRQ_TYPE_EDGE_RISING>;
++
++		/*
++		 * The trusted application that owns the sensor. The SPI
++		 * instance belongs to TrustZone, so every capture and match
++		 * happens inside this application and a client has to name it
++		 * to open a session.
++		 */
++		firmware-name = "focal32";
++		pinctrl-names = "fpsensor_finger_rst_low",
++				"fpsensor_finger_rst_high",
++				"fpsensor_eint_as_int",
++				"fpsensor_finger_power_low",
++				"fpsensor_finger_power_high";
++		pinctrl-0 = <&fpsensor_rst_low>;
++		pinctrl-1 = <&fpsensor_rst_high>;
++		pinctrl-2 = <&fpsensor_irq>;
++		pinctrl-3 = <&fpsensor_pwr_low>;
++		pinctrl-4 = <&fpsensor_pwr_high>;
++	};
++
+ 	reserved-memory {
+ 		cont_splash_mem: cont-splash@e1000000 {
+ 			reg = <0x0 0xe1000000 0x0 0x2300000>;
+@@ -1528,6 +1551,41 @@ &tlmm {
+ 	 */
+ 	gpio-reserved-ranges = <32 2>, <56 4>;
+ 
++	fpsensor_irq: fpsensor-irq-state {
++		pins = "gpio34";
++		function = "gpio";
++		input-enable;
++		bias-pull-down;
++	};
++
++	fpsensor_pwr_high: fpsensor-pwr-high-state {
++		pins = "gpio60";
++		function = "gpio";
++		output-high;
++		bias-disable;
++	};
++
++	fpsensor_pwr_low: fpsensor-pwr-low-state {
++		pins = "gpio60";
++		function = "gpio";
++		output-low;
++		bias-disable;
++	};
++
++	fpsensor_rst_high: fpsensor-rst-high-state {
++		pins = "gpio35";
++		function = "gpio";
++		output-high;
++		bias-disable;
++	};
++
++	fpsensor_rst_low: fpsensor-rst-low-state {
++		pins = "gpio35";
++		function = "gpio";
++		output-low;
++		bias-disable;
++	};
++
+ 	pm8008_int_default: pm8008-int-default-state {
+ 		pins = "gpio25";
+ 		function = "gpio";

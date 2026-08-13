@@ -14,6 +14,11 @@ in
   # Firmware
   xiaomi-beryllium-firmware = callPackage ./xiaomi-beryllium-firmware { };
   oneplus-sdm845-firmware = callPackage ./oneplus-sdm845-firmware { };
+  fairphone-fp5-firmware = callPackage ./fairphone-fp5-firmware { };
+  ftharness = callPackage ./ftharness { };
+  ffsupplicant = callPackage ./ffsupplicant { };
+  libfprint-focaltech = callPackage ./libfprint { inherit (pkgs) libfprint; };
+  pil-squasher = callPackage ./pil-squasher { };
 
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
 
@@ -24,6 +29,7 @@ in
   iio-hyprland = callPackage ./iio-hyprland { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   msm-modem = callPackage ./msm-modem { };
+  pd-mapper = callPackage ./pd-mapper { };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
   swclock-offset = callPackage ./swclock-offset { };
   usb-moded = callPackage ./usb-moded { };

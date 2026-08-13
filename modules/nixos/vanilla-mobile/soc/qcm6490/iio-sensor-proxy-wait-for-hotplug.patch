@@ -1,0 +1,42 @@
+From e745eb4f1ad12da9b3aedafdc309f16d3a0d9527 Mon Sep 17 00:00:00 2001
+From: "Sicelo A. Mhlongo" <absicsz@gmail.com>
+Date: Tue, 30 Sep 2025 13:17:16 +0200
+Subject: [PATCH] WIP: iio-sensor-proxy.c: Do not exit based on sensor events
+
+On the Fairphone 5 the SSC sensors only appear once hexagonrpcd-adsp has
+brought the ADSP up, which is well after iio-sensor-proxy starts. Keep the
+daemon running when no sensor is present and let it pick them up on hotplug
+instead of quitting.
+
+Rebased onto 3.9, which carries the SSC driver series upstream.
+---
+ src/iio-sensor-proxy.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/src/iio-sensor-proxy.c b/src/iio-sensor-proxy.c
+index 9c7e8cd..cbd4463 100644
+--- a/src/iio-sensor-proxy.c
++++ b/src/iio-sensor-proxy.c
+@@ -790,8 +790,7 @@ name_acquired_handler (GDBusConnection *connection,
+ 
+ bail:
+ 	data->ret = 0;
+-	g_message ("No sensors or missing kernel drivers for the sensors. Exiting");
+-	g_main_loop_quit (data->loop);
++	g_message ("No sensors or missing kernel drivers for the sensors. Waiting for hotplug sensors");
+ }
+ 
+ static gboolean
+@@ -1074,9 +1073,6 @@ sensor_changes (GUdevClient *client,
+ 				send_driver_changed_dbus_event (data, i);
+ 			}
+ 		}
+-
+-		if (!any_sensors_left (data))
+-			g_main_loop_quit (data->loop);
+ 	} else if (g_strcmp0 (action, "add") == 0) {
+ 		for (i = 0; i < G_N_ELEMENTS(drivers); i++) {
+ 			SensorDriver *driver = (SensorDriver *) drivers[i];
+-- 
+2.55.0
+

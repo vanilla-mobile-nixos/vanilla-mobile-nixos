@@ -1,0 +1,13 @@
+diff -Naur ta/drivers/thermal/qcom/qcom-spmi-adc-tm5.c tb/drivers/thermal/qcom/qcom-spmi-adc-tm5.c
+--- a/drivers/thermal/qcom/qcom-spmi-adc-tm5.c	2026-08-11 08:22:33.834855353 -0600
++++ b/drivers/thermal/qcom/qcom-spmi-adc-tm5.c	2026-08-11 08:22:45.537307179 -0600
+@@ -369,9 +369,6 @@
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	if (ret != IIO_VAL_INT)
+-		return -EINVAL;
+-
+ 	return 0;
+ }
+ 

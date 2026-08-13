@@ -60,6 +60,7 @@ in
           # Out of date in nixpkgs due to broken package definition.
           inherit (self.packages) hyprgrass;
         };
+        inherit (self.packages) ftharness ffsupplicant;
       })
     ];
 

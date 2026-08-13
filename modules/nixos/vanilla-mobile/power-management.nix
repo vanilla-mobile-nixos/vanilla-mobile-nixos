@@ -45,7 +45,10 @@ in
 
         script = ''
           while true; do
-            if ${lib.getExe pkgs.playerctl} -a status | grep -q "Playing"; then
+            # playerctl writes "No players found" to stderr on every poll when
+            # nothing is playing, which at this interval is a line a second in
+            # the journal for the entire uptime of the session.
+            if ${lib.getExe pkgs.playerctl} -a status 2>/dev/null | grep -q "Playing"; then
               systemd-inhibit --what sleep \
                 --who "mpris-inhibit-sleep.service" \
                 --why "MPRIS media playing" \
