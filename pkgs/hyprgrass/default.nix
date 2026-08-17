@@ -4,12 +4,14 @@
   fetchFromGitHub,
 }:
 (hyprgrass.override {
-  # See <https://github.com/NixOS/nixpkgs/pull/526498>.
   wf-touch = wf-touch.overrideAttrs {
-    buildInputs = [ ];
-    mesonFlags = [
-      "-Dtests=disabled"
-    ];
+    version = "0-unstable-2021-03-19";
+    src = fetchFromGitHub {
+      owner = "WayfireWM";
+      repo = "wf-touch";
+      rev = "8974eb0f6a65464b63dd03b842795cb441fb6403";
+      hash = "sha256-MjsYeKWL16vMKETtKM5xWXszlYUOEk3ghwYI85Lv4SE=";
+    };
   };
 }).overrideAttrs
   (
