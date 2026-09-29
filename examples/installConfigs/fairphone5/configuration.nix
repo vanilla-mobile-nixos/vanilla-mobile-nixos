@@ -4,7 +4,7 @@
 }:
 {
   imports = [
-    ./image-config.nix
+    ./disko-config.nix
   ];
 
   # Remove this after the initial flash.

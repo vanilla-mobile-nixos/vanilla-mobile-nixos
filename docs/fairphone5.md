@@ -16,8 +16,10 @@ a single GPT disk image containing both the boot (ESP) and root partitions is fl
 to the `userdata` partition. U-Boot and the initrd both map `userdata` as a disk
 to find the partitions inside it.
 
-Because of this, the install config uses `image-config.nix` (systemd-repart) instead
-of a disko config. LUKS encryption isn't set up by it yet.
+Because of this, `disko-config.nix` defines a single disk with a partition table,
+instead of separate boot and root images like other devices. It's configured to use a
+LUKS encrypted ext4 root filesystem by default. Set `encrypt = false;` at the top of
+it for an unencrypted one.
 
 ### NixOS Config
 
@@ -28,8 +30,7 @@ Now:
 
 - Add `vanilla-mobile-nixos` and `disko` to your inputs.
 - Add the `fairphone5` example as a NixOS configuration.
-- Import the `vanilla-mobile` and `disko` modules in that config. The `disko` module
-  still needs to be imported, even though it isn't used for this device.
+- Import the `vanilla-mobile` and `disko` modules in that config.
 
 Here's a simple example of that for flakes:
 
@@ -108,8 +109,14 @@ nix.settings = {
 Then, just add `--option extra-substituters https://vanilla-mobile-nixos.cachix.org`
 to your build commands as shown below.
 
-Build the image. For flakes that looks like:
-`nix build --option extra-substituters https://vanilla-mobile-nixos.cachix.org .#nixosConfigurations.fairphone5.config.system.build.image`
+Build the script that will generate the image. For flakes that looks like:
+`nix build --option extra-substituters https://vanilla-mobile-nixos.cachix.org .#nixosConfigurations.fairphone5.config.system.build.diskoImagesScript`
+
+Now run the script. It's just `./result` if you aren't using LUKS encryption. If you
+are, you'll have to pass in the encryption password like this:
+`bash -c 'read -s -p "LUKS Password: " p; tmp=$(mktemp); trap "rm \"$tmp\"" EXIT; echo "$p" > "$tmp"; ./result --pre-format-files "$tmp" /tmp/nixos-root.key'`
+
+This should create `nixos-fairphone5.raw`.
 
 ### U-Boot
 
@@ -121,7 +128,7 @@ Build the image. For flakes that looks like:
 ### NixOS Image Flashing
 
 - Flash the NixOS image to the phone's `userdata` partition:
-  - `fastboot erase userdata flash userdata result/nixos-fairphone5.raw`
+  - `fastboot erase userdata flash userdata nixos-fairphone5.raw`
 - Reboot the phone with `fastboot reboot`.
 
 The root partition is grown to fill `userdata` on first boot.

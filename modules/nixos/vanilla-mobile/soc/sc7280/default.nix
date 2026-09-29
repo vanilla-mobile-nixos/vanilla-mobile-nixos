@@ -56,6 +56,9 @@ in
             includeDefaultModules = false;
             # The kernel lacks `CONFIG_RD_ZSTD`.
             compressor = "gzip";
+            # The LUKS and unl0kr modules list ones the kernel doesn't have
+            # (e.g. `i2c-hid-acpi` needs ACPI).
+            allowMissingModules = true;
 
             systemd.tpm2.enable = false;
           };
