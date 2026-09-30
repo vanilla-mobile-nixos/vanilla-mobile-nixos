@@ -79,6 +79,7 @@ in
       # Modem
       (lib.mkIf cfg.modem.enable {
         vanilla-mobile.soc.qualcomm.modem.enable = true;
+        services.modem-gnss.enable = true;
       })
       # Sensors
       (lib.mkIf cfg.sensors.enable {

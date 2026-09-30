@@ -1,6 +1,7 @@
 {
   bootmac = import ./bootmac.nix;
   hexagonrpcd = import ./hexagonrpcd.nix;
+  modem-gnss = import ./modem-gnss.nix;
   msm-modem-uim-selection = import ./msm-modem-uim-selection.nix;
   rmtfs = import ./rmtfs.nix;
   swclock-offset = import ./swclock-offset.nix;
