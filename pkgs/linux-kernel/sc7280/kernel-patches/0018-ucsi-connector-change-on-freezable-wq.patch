@@ -1,0 +1,62 @@
+From: Marcus Ramberg <marcus@means.no>
+usb: typec: ucsi: run the connector change work on a freezable workqueue
+
+ucsi_connector_change() puts the connector work on system_wq, which is not
+frozen for suspend. A connector change that arrives while the system is going
+down -- or the one that wakes it, since a cable plug is a wakeup source -- is
+therefore handled with the devices still suspended.
+
+ucsi_handle_connector_change() calls ->connector_status(), and on boards where
+the orientation switch or redriver hangs off i2c that ends in a transfer on a
+suspended adapter. On a Fairphone 5 (sc7280, fsa4480 on i2c-1 and ptn36502 on
+i2c-4) resume produces:
+
+  i2c i2c-4: Transfer while suspended
+  WARNING: drivers/i2c/i2c-core.h:56 at __i2c_transfer+0x87c/0x8e0, CPU#0: kworker/0:0/6681
+  Workqueue: events ucsi_handle_connector_change
+  Call trace:
+   __i2c_transfer+0x87c/0x8e0 (P)
+   i2c_transfer+0x78/0x110
+   i2c_transfer_buffer_flags+0x68/0xb0
+   regmap_i2c_write+0x20/0x48
+   _regmap_raw_write_impl+0x780/0x944
+   _regmap_bus_raw_write+0x60/0x7c
+   _regmap_write+0x134/0x184
+   regmap_write+0x54/0x78
+   ptn36502_sw_set+0x60/0x84 [ptn36502]
+   typec_switch_set+0x48/0x74 [typec]
+   ucsi_handle_connector_change+0x...
+
+__i2c_check_suspended() does not only warn, it returns -ESHUTDOWN, so the
+orientation never reaches the switch and nothing retries it -- the warning is
+the visible part of a lost connector state.
+
+Use system_freezable_wq so the work is held until the freezer thaws, which
+happens after the devices have resumed. The EVENT_PENDING bit still coalesces
+events while the work is pending, so a deferred change is picked up with the
+state read at the time it finally runs.
+
+The same fix has been applied to the sibling notification path in
+pmic_glink_altmode.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+--- a/drivers/usb/typec/ucsi/ucsi.c
++++ b/drivers/usb/typec/ucsi/ucsi.c
+@@ -1403,8 +1403,14 @@
+ 
+ 	con = &ucsi->connector[num - 1];
+ 
++	/*
++	 * Handling the change ends up in ->connector_status(), which on boards
++	 * with an off-SoC orientation switch or redriver talks to it over a bus
++	 * that may itself be suspended. Use a freezable queue so that the work
++	 * is not run until the devices are back.
++	 */
+ 	if (!test_and_set_bit(EVENT_PENDING, &ucsi->flags))
+-		schedule_work(&con->work);
++		queue_work(system_freezable_wq, &con->work);
+ }
+ EXPORT_SYMBOL_GPL(ucsi_connector_change);
+ 

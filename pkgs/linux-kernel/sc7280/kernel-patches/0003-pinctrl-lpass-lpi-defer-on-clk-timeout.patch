@@ -1,0 +1,48 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] pinctrl: qcom: lpass-lpi: defer probe when the clocks time out
+
+The LPASS LPI pinctrl core and audio clocks are provided by the ADSP,
+through q6prm over GLINK. If the pinctrl driver probes before the ADSP
+remoteproc has booted, enabling them does not return -EPROBE_DEFER: the
+clock enable request goes unanswered and times out with -ETIMEDOUT.
+
+The clocks are now handled through pm_clk/runtime PM, so nothing in probe
+touches them and the failure only surfaces later, on the first register
+access, as a hard failure -- the pinctrl device never probes again even
+once the ADSP is up. Everything downstream of it stays in deferred probe
+forever, which on a Fairphone 5 leaves the whole sound card unusable.
+
+Resume the device once during probe and translate the timeout into
+-EPROBE_DEFER, so the probe is retried after the ADSP has booted.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+
+---
+diff --git a/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c b/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c
+index 5fd4a4eba654..4dcae85288b8 100644
+--- a/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c
++++ b/drivers/pinctrl/qcom/pinctrl-lpass-lpi.c
+@@ -545,6 +545,22 @@ int lpi_pinctrl_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		return ret;
+ 
++	/*
++	 * The core/audio clocks are provided by the ADSP (through q6prm over
++	 * GLINK). If the ADSP has not booted yet, the clock enable request
++	 * times out instead of deferring. Resume once here so the timeout can
++	 * be turned into a probe deferral, instead of failing later on the
++	 * first register access and leaving the whole sound card stuck in
++	 * deferred probe.
++	 */
++	ret = pm_runtime_resume_and_get(dev);
++	if (ret) {
++		if (ret == -ETIMEDOUT)
++			ret = -EPROBE_DEFER;
++		return dev_err_probe(dev, ret, "Can't enable clocks\n");
++	}
++	pm_runtime_put_autosuspend(dev);
++
+ 	pctrl->desc.pctlops = &lpi_gpio_pinctrl_ops;
+ 	pctrl->desc.pmxops = &lpi_gpio_pinmux_ops;
+ 	pctrl->desc.confops = &lpi_gpio_pinconf_ops;

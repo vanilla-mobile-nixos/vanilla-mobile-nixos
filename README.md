@@ -33,10 +33,13 @@ Many of the devices that work best for mobile Linux are older devices you can bu
 secondhand.
 
 Tested Devices:
+
 - [Xiaomi POCO F1 Tianma (xiaomi-beryllium)](docs/xiaomi-beryllium.md)
   - SIM card currently untested.
+- [Fairphone 5 (fairphone-fp5)](docs/fairphone5.md)
 
 Implemented but untested:
+
 - Xiaomi POCO F1 EBBG
   - Will need to be added to alsa-ucm-conf-sdm845 like I did for Tianma [here](https://gitlab.com/sdm845-mainline/alsa-ucm-conf/-/merge_requests/32).
     Run this command to find out what symlink needs to be added:

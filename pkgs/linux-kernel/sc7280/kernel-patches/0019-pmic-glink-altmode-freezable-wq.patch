@@ -1,0 +1,39 @@
+soc: qcom: pmic_glink_altmode: use a freezable workqueue for the altmode worker
+
+Abel Vesa <abel.vesa@linaro.org>, posted to linux-arm-msm.
+
+  Fixes: 080b4e24852b ("soc: qcom: pmic_glink: Introduce altmode support")
+  Cc: stable@vger.kernel.org    # 6.3
+
+pmic_glink_altmode_worker() runs on system_wq, which is not frozen for
+suspend, so it can reach a Type-C retimer, switch or mux over i2c while the
+i2c controller is still suspended. Queue it on system_freezable_wq instead,
+so it does not run until the devices have resumed.
+
+Observed upstream on X Elite (ParadeTech PS8830); the same warning appears
+here on the Fairphone 5 via the ucsi connector change path, fixed by the
+companion patch ucsi-connector-change-on-freezable-wq.
+
+The hunks below are regenerated against this tree, whose line numbers differ
+from the posted patch.
+
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -450,7 +450,7 @@
+ 	alt_port->mode = mode;
+ 	alt_port->hpd_state = hpd_state;
+ 	alt_port->hpd_irq = hpd_irq;
+-	schedule_work(&alt_port->work);
++	queue_work(system_freezable_wq, &alt_port->work);
+ }
+ 
+ #define SC8280XP_DPAM_MASK	0x3f
+@@ -501,7 +501,7 @@
+ 		alt_port->tbt_data = *tbt;
+ 	}
+ 
+-	schedule_work(&alt_port->work);
++	queue_work(system_freezable_wq, &alt_port->work);
+ }
+ 
+ static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv)

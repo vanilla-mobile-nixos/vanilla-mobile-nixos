@@ -1,0 +1,36 @@
+--- a/src/libcamera/sensor/camera_sensor_properties.cpp	2026-07-30 08:22:54.148643244 +0200
++++ b/src/libcamera/sensor/camera_sensor_properties.cpp	2026-07-30 08:23:21.580594722 +0200
+@@ -335,6 +335,16 @@
+ 				.hblankDelay = 3
+ 			},
+ 		} },
++		{ "imx858", {
++			.unitCellSize = { 700, 700 },
++			.testPatternModes = {},
++			.sensorDelays = {
++				.exposureDelay = 2,
++				.gainDelay = 2,
++				.vblankDelay = 2,
++				.hblankDelay = 2
++			},
++		} },
+ 		{ "ov2685", {
+ 			.unitCellSize = { 1750, 1750 },
+ 			.testPatternModes = {
+@@ -503,6 +513,16 @@
+ 			},
+ 			.sensorDelays = { },
+ 		} },
++		{ "s5kjn1", {
++			.unitCellSize = { 640, 640 },
++			.testPatternModes = {},
++			.sensorDelays = {
++				.exposureDelay = 2,
++				.gainDelay = 2,
++				.vblankDelay = 2,
++				.hblankDelay = 2
++			},
++		} },
+ 		{ "vd55g1", {
+ 			.unitCellSize = { 2160, 2160 },
+ 			.testPatternModes = {

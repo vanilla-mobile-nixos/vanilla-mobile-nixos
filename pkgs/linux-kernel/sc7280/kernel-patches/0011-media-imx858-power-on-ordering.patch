@@ -1,0 +1,55 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] media: i2c: imx858: fix power-on reset/clock ordering
+
+imx858_power_on() released the sensor reset (XCLR) before enabling the
+input clock and only waited ~1ms afterwards. Sony sensors require the
+reset to be deasserted only after MCLK is running and stable. The cold
+boot path happened to work due to incidental settle time, but a
+runtime-PM power-down/up cycle (e.g. restarting the camera app) races:
+the sensor does not re-initialise, the first i2c access NAKs, and the
+GENI i2c controller wedges ("Timeout resetting RX_FSM"), taking the AF
+actuator on the same bus down with it.
+
+Reorder to match the working s5kjn1 driver: enable regulators, enable
+MCLK, let it settle, then release reset and wait for the sensor to boot
+before the first i2c transaction.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+diff --git a/drivers/media/i2c/imx858.c b/drivers/media/i2c/imx858.c
+index 5cf37c25e8e5..1d846ee948b2 100644
+--- a/drivers/media/i2c/imx858.c
++++ b/drivers/media/i2c/imx858.c
+@@ -1049,20 +1049,23 @@ static int imx858_power_on(struct device *dev)
+ 		return ret;
+ 	}
+ 
+-	gpiod_set_value_cansleep(imx858->reset_gpio, 0);
+-
+ 	ret = clk_prepare_enable(imx858->inclk);
+ 	if (ret) {
+ 		dev_err(imx858->dev, "fail to enable inclk\n");
+-		goto error_reset;
++		goto error_regulator;
+ 	}
+ 
++	/* Let the input clock (MCLK) settle before releasing reset (XCLR). */
+ 	usleep_range(1000, 1200);
+ 
++	gpiod_set_value_cansleep(imx858->reset_gpio, 0);
++
++	/* Wait for the sensor to boot before the first i2c access. */
++	usleep_range(10000, 15000);
++
+ 	return 0;
+ 
+-error_reset:
+-	gpiod_set_value_cansleep(imx858->reset_gpio, 1);
++error_regulator:
+ 	regulator_bulk_disable(ARRAY_SIZE(imx858_supply_names),
+ 			       imx858->supplies);
+ 
+-- 
+2.51.0
+

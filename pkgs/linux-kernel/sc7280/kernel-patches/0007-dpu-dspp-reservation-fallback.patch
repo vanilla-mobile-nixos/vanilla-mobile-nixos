@@ -1,0 +1,45 @@
+From 0c5c213a017dab21d3da77e6291b39430dcec051 Mon Sep 17 00:00:00 2001
+From: Christian Glombek <c.glombek@cosa.systems>
+Date: Tue, 10 Mar 2026 13:18:01 +0100
+Subject: [PATCH] drm/msm/dpu: fall back to no DSPP when hw resources are
+ insufficient
+
+SC7280/QCM6490 has only one DSPP block (DSPP_0) paired with LM_0.
+In a dual-display setup (DSI + DP), when both CRTCs request color
+management (CTM/gamma_lut), the second CRTC fails to reserve hardware
+because LM_2/LM_3 have no DSPP attached. This causes DP hotplug to
+fail with "failed to get dspp on lm 0" / "unable to find appropriate
+mixers", making external displays unusable after unplug/replug.
+
+Retry the reservation without DSPP if the initial attempt fails. This
+allows the second CRTC to use mixers without color management rather
+than failing entirely.
+
+Assisted-By: Claude Opus 4.6
+Signed-off-by: Christian Glombek <c.glombek@cosa.systems>
+---
+ drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+index 2d06c950e81437..b0d05f19499aed 100644
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+@@ -1400,6 +1400,17 @@ static int dpu_crtc_assign_resources(struct drm_crtc *crtc,
+ 	topology = dpu_crtc_get_topology(crtc, dpu_kms, crtc_state);
+ 	ret = dpu_rm_reserve(&dpu_kms->rm, global_state,
+ 			     crtc_state->crtc, &topology);
++	if (ret && topology.num_dspp) {
++		/*
++		 * If reservation failed with DSPP requested, retry without
++		 * DSPP. This handles hardware with limited DSPP blocks (e.g.
++		 * SC7280 has only 1 DSPP) where dual-display requires one
++		 * CRTC to operate without color management.
++		 */
++		topology.num_dspp = 0;
++		ret = dpu_rm_reserve(&dpu_kms->rm, global_state,
++				     crtc_state->crtc, &topology);
++	}
+ 	if (ret)
+ 		return ret;
+ 

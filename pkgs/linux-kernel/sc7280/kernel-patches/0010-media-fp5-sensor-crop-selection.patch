@@ -1,0 +1,116 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] media: i2c: s5kjn1, imx858: report pad crop selection
+ rectangles
+
+libcamera's CameraSensor probes the sensor sub-device for the crop and
+native-size selection targets to derive the pixel array geometry. Both
+FP5 sensor drivers failed these queries, so libcamera logged "the sensor
+kernel driver needs to be fixed" and defaulted the pixel array to bogus
+sizes.
+
+imx858 implemented no .get_selection at all; add one covering CROP,
+CROP_DEFAULT, CROP_BOUNDS and NATIVE_SIZE using the current mode size.
+
+s5kjn1 had a partial implementation that only handled CROP/CROP_BOUNDS,
+reported the per-mode size instead of the native array, and copied
+->width into the height field (yielding an 8160x8160 active area).
+Report the full 8160x6144 native array for all crop targets, since every
+mode reads out the full field of view.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+diff --git a/drivers/media/i2c/imx858.c b/drivers/media/i2c/imx858.c
+index 5cf37c25e8e5..97b6158da686 100644
+--- a/drivers/media/i2c/imx858.c
++++ b/drivers/media/i2c/imx858.c
+@@ -1009,6 +1009,30 @@ static int imx858_parse_hw_config(struct imx858 *imx858)
+ 	return ret;
+ }
+ 
++static int imx858_get_selection(struct v4l2_subdev *sd,
++				struct v4l2_subdev_state *sd_state,
++				struct v4l2_subdev_selection *sel)
++{
++	struct imx858 *imx858 = to_imx858(sd);
++
++	if (sel->which != V4L2_SUBDEV_FORMAT_ACTIVE)
++		return -EINVAL;
++
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = imx858->cur_mode->width;
++		sel->r.height = imx858->cur_mode->height;
++		return 0;
++	default:
++		return -EINVAL;
++	}
++}
++
+ /* V4l2 subdevice ops */
+ static const struct v4l2_subdev_video_ops imx858_video_ops = {
+ 	.s_stream = imx858_set_stream,
+@@ -1019,6 +1043,7 @@ static const struct v4l2_subdev_pad_ops imx858_pad_ops = {
+ 	.enum_frame_size = imx858_enum_frame_size,
+ 	.get_fmt = imx858_get_pad_format,
+ 	.set_fmt = imx858_set_pad_format,
++	.get_selection = imx858_get_selection,
+ };
+ 
+ static const struct v4l2_subdev_ops imx858_subdev_ops = {
+diff --git a/drivers/media/i2c/s5kjn1.c b/drivers/media/i2c/s5kjn1.c
+index a707cb740556..7edbb4d1c544 100644
+--- a/drivers/media/i2c/s5kjn1.c
++++ b/drivers/media/i2c/s5kjn1.c
+@@ -18,6 +18,10 @@
+ #define S5KJN1_MCLK_FREQ_24MHZ		(24 * HZ_PER_MHZ)
+ #define S5KJN1_DATA_LANES		4
+ 
++/* Full pixel array (native resolution, before binning). */
++#define S5KJN1_NATIVE_WIDTH		8160
++#define S5KJN1_NATIVE_HEIGHT		6144
++
+ /* Register map is similar to MIPI CCS compliant camera sensors */
+ #define S5KJN1_REG_CHIP_ID		CCI_REG16(0x0000)
+ #define S5KJN1_CHIP_ID			0x38e1
+@@ -1068,24 +1072,26 @@ static int s5kjn1_get_selection(struct v4l2_subdev *sd,
+ 				struct v4l2_subdev_state *sd_state,
+ 				struct v4l2_subdev_selection *sel)
+ {
+-	struct s5kjn1 *s5kjn1 = to_s5kjn1(sd);
+-
+ 	if (sel->which != V4L2_SUBDEV_FORMAT_ACTIVE)
+ 		return -EINVAL;
+ 
+ 	switch (sel->target) {
++	/*
++	 * All modes read out the full field of view (binning modes bin the
++	 * whole array), so the crop rectangle always covers the native array.
++	 */
+ 	case V4L2_SEL_TGT_CROP:
++	case V4L2_SEL_TGT_CROP_DEFAULT:
+ 	case V4L2_SEL_TGT_CROP_BOUNDS:
++	case V4L2_SEL_TGT_NATIVE_SIZE:
+ 		sel->r.left = 0;
+ 		sel->r.top = 0;
+-		sel->r.width = s5kjn1->mode->width;
+-		sel->r.height = s5kjn1->mode->width;
++		sel->r.width = S5KJN1_NATIVE_WIDTH;
++		sel->r.height = S5KJN1_NATIVE_HEIGHT;
+ 		return 0;
+ 	default:
+ 		return -EINVAL;
+ 	}
+-
+-	return 0;
+ }
+ 
+ static int s5kjn1_init_state(struct v4l2_subdev *sd,
+-- 
+2.51.0
+

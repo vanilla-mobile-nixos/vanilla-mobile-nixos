@@ -1,0 +1,75 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] arm64: dts: qcom: qcm6490-fairphone-fp5: add the ST21NFCD NFC controller
+
+Describe the ST21NFCD NFC controller sitting on I2C9, so the raw-NCI/I2C
+driver can bind to it.
+
+The controller is at address 0x08 with a level-high interrupt on TLMM 41
+and reset on TLMM 38. There is no on-module crystal, so the reference
+clock is taken from the PMIC XO buffer (RPMH_LN_BB_CLK2). The I2C pads
+need pull-ups, which the on-board lines do not provide.
+
+Hardware details taken from the Fairphone 5 Android kernel source.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts	2026-06-20 17:21:56.022881118 +0200
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts	2026-06-20 18:35:32.105493729 +0200
+@@ -1006,6 +1008,24 @@
+ &i2c9 {
+ 	status = "okay";
+ 
+-	/* ST21NFC NFC @ 28 */
++	pinctrl-0 = <&qup_i2c9_data_clk_pullup>;
++
++	st21nfcd: nfc@8 {
++		compatible = "st,st21nfcd-i2c";
++		reg = <0x08>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
++
++		reset-gpios = <&tlmm 38 GPIO_ACTIVE_HIGH>;
++
++		clocks = <&rpmhcc RPMH_LN_BB_CLK2>;
++		clock-names = "nfc_ref_clk";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&nfc_reset_default>, <&nfc_clkreq_default>, <&nfc_irq_default>;
++
++		status = "okay";
++	};
+ 	/* VL53L3 ToF @ 29 */
+ };
+@@ -1665,4 +1684,28 @@
+ 		drive-strength = <16>;
+ 		bias-disable;
+ 	};
++
++	nfc_reset_default: nfc-reset-default {
++		pins = "gpio38";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	nfc_clkreq_default: nfc-clkreq-default {
++		pins = "gpio39";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	nfc_irq_default: nfc-irq-default {
++		pins = "gpio41";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
++
++	qup_i2c9_data_clk_pullup: qup-i2c9-data-clk-pullup-state {
++		pins = "gpio36", "gpio37";
++		function = "qup11";
++		bias-pull-up;
++	};
+ };
+ 
+ &uart5 {

@@ -71,6 +71,38 @@
           --kernel u-boot.bin.gz \
           -o $out/u-boot.img
       '';
+  mkAndroidBootImageV2 =
+    {
+      uboot,
+      page_size ? 4096,
+    }:
+    buildPackages.runCommand "${uboot.pname}-boot-image"
+      {
+        meta = {
+          inherit (uboot.meta) license;
+        };
+      }
+      ''
+        gzip ${uboot}/u-boot-nodtb.bin -c > u-boot-nodtb.bin.gz
+
+        # Make an empty gzip archive to use as the ramdisk.
+        # Tauchgang does this "to make more compatible android boot images".
+        printf "\0" | gzip --stdout > "empty.gz"
+
+        mkdir -p $out
+
+        ${lib.getExe' buildPackages.android-tools "mkbootimg"} \
+          --header_version 2 \
+          --base 0x0 \
+          --kernel_offset 0x8000 \
+          --dtb_offset 0x01f00000 \
+          --pagesize ${toString page_size} \
+          --os_patch_level 2028-09-21 \
+          --ramdisk empty.gz \
+          --kernel u-boot-nodtb.bin.gz \
+          --dtb ${uboot}/u-boot.dtb \
+          -o $out/u-boot.img
+      '';
   mkAndroidBootImageQCDT =
     {
       uboot,

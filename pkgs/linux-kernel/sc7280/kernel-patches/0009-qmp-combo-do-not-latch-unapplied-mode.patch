@@ -1,0 +1,145 @@
+From: Marcus Ramberg <marcus@means.no>
+phy: qcom: qmp-combo: do not latch a mode the hardware never entered
+
+qmp_combo_apply_mode() discards the result of qmp_combo_usb_power_on(), which
+can fail: it polls PHYSTATUS with a 10 ms timeout and gives up with -ETIMEDOUT
+if the USB3 PHY does not come out of reset. Observed on a Fairphone 5 while
+replugging a DP+USB3 dock:
+
+  qcom-qmp-combo-phy 88e8000.phy: switching from qmpphy mode 2 to 0
+  qcom-qmp-combo-phy 88e8000.phy: phy initialization timed-out
+
+qmpphy_mode has already been updated at that point, so the driver records a
+mode the hardware never entered. Every later request for the same mode then
+takes the "same qmpphy mode" early return and skips the com_exit()/com_init()
+sequence, so the PHY is never reprogrammed and both the USB3 and DP lanes stay
+dead until reboot.
+
+Propagate the error to the caller and track whether the recorded mode was
+actually programmed. The "same qmpphy mode" early return now also requires
+mode_applied, so a failed switch is retried on the next request instead of
+being latched forever.
+
+mode_applied starts out false, which also covers the case where the initial
+qmpphy_mode assigned at probe happens to match the first mode requested by the
+typec mux: the PHY is programmed once rather than skipped.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+@@ -2307,6 +2307,7 @@
+ 	bool dp_powered_on;
+ 	bool mode_switch_pending;
+ 	enum qmpphy_mode pending_mode;
++	bool mode_applied;
+ 
+ 	struct clk_fixed_rate pipe_clk_fixed;
+ 	struct clk_hw dp_link_hw;
+@@ -3840,11 +3841,12 @@
+ 	return 0;
+ }
+ 
+-static void qmp_combo_apply_mode(struct qmp_combo *qmp, enum qmpphy_mode new_mode);
++static int qmp_combo_apply_mode(struct qmp_combo *qmp, enum qmpphy_mode new_mode);
+ 
+ static int qmp_combo_dp_power_off(struct phy *phy)
+ {
+ 	struct qmp_combo *qmp = phy_get_drvdata(phy);
++	int ret;
+ 
+ 	mutex_lock(&qmp->phy_mutex);
+ 
+@@ -3858,8 +3860,11 @@
+ 	 * deferred rather than applied. The DP PHY is now down, so it is safe
+ 	 * to reprogram the combo PHY; nothing else would ever retry it.
+ 	 */
+-	if (qmp->mode_switch_pending)
+-		qmp_combo_apply_mode(qmp, qmp->pending_mode);
++	if (qmp->mode_switch_pending) {
++		ret = qmp_combo_apply_mode(qmp, qmp->pending_mode);
++		if (ret)
++			dev_err(qmp->dev, "deferred mode switch failed: %d\n", ret);
++	}
+ 
+ 	mutex_unlock(&qmp->phy_mutex);
+ 
+@@ -3951,9 +3956,10 @@
+ }
+ 
+ /* Reprogram the combo PHY for @new_mode. Caller must hold qmp->phy_mutex. */
+-static void qmp_combo_apply_mode(struct qmp_combo *qmp, enum qmpphy_mode new_mode)
++static int qmp_combo_apply_mode(struct qmp_combo *qmp, enum qmpphy_mode new_mode)
+ {
+ 	const struct qmp_phy_cfg *cfg = qmp->cfg;
++	int ret;
+ 
+ 	dev_dbg(qmp->dev, "switching from qmpphy mode %d to %d\n",
+ 		qmp->qmpphy_mode, new_mode);
+@@ -3961,8 +3967,16 @@
+ 	qmp->qmpphy_mode = new_mode;
+ 	qmp->mode_switch_pending = false;
+ 
+-	if (!qmp->init_count)
+-		return;
++	if (!qmp->init_count) {
++		/*
++		 * Nothing to program yet: the mode is recorded and will be
++		 * applied by the next qmp_combo_com_init().
++		 */
++		qmp->mode_applied = true;
++		return 0;
++	}
++
++	qmp->mode_applied = false;
+ 
+ 	if (qmp->usb_init_count)
+ 		qmp_combo_usb_power_off(qmp->usb_phy);
+@@ -3981,7 +3995,14 @@
+ 	}
+ 
+ 	if (new_mode == QMPPHY_MODE_USB3DP || new_mode == QMPPHY_MODE_USB3_ONLY) {
+-		qmp_combo_usb_power_on(qmp->usb_phy);
++		ret = qmp_combo_usb_power_on(qmp->usb_phy);
++		if (ret) {
++			dev_err(qmp->dev,
++				"failed to power on USB PHY for qmpphy mode %d: %d\n",
++				new_mode, ret);
++			return ret;
++		}
++
+ 		if (!qmp->usb_init_count)
+ 			qmp->usb_init_count++;
+ 	}
+@@ -3990,6 +4011,10 @@
+ 		if (qmp->dp_init_count)
+ 			cfg->dp_aux_init(qmp);
+ 	}
++
++	qmp->mode_applied = true;
++
++	return 0;
+ }
+ 
+ static int qmp_combo_usb_init(struct phy *phy)
+@@ -4538,7 +4563,7 @@
+ 		new_mode = QMPPHY_MODE_USB3_ONLY;
+ 	}
+ 
+-	if (new_mode == qmp->qmpphy_mode) {
++	if (new_mode == qmp->qmpphy_mode && qmp->mode_applied) {
+ 		dev_dbg(qmp->dev, "typec_mux_set: same qmpphy mode, bail out\n");
+ 		qmp->mode_switch_pending = false;
+ 		return 0;
+@@ -4552,9 +4577,7 @@
+ 		return 0;
+ 	}
+ 
+-	qmp_combo_apply_mode(qmp, new_mode);
+-
+-	return 0;
++	return qmp_combo_apply_mode(qmp, new_mode);
+ }
+ 
+ static void qmp_combo_typec_switch_unregister(void *data)
