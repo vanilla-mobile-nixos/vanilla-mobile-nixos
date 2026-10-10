@@ -32,10 +32,9 @@ in
         # Some firmware from `linux-firmware` is required.
         hardware.enableRedistributableFirmware = true;
         # Link firmware `/share` into environment for hexagonrpcd.
-        environment.systemPackages =
-          lib.mkIf config.vanilla-mobile.deviceInfo.firmware != null [
-            config.vanilla-mobile.deviceInfo.firmware
-          ];
+        environment.systemPackages = lib.mkIf (config.vanilla-mobile.deviceInfo.firmware != null) [
+          config.vanilla-mobile.deviceInfo.firmware
+        ];
 
         vanilla-mobile.uboot.enable = true;
 
