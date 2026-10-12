@@ -10,7 +10,12 @@
   dtbtool-exynos,
 }:
 let
-  inherit (ubootUtils) buildTauchgangUBoot mkAndroidBootImage mkAndroidBootImageQCDT;
+  inherit (ubootUtils)
+    buildTauchgangUBoot
+    mkAndroidBootImage
+    mkAndroidBootImageV2
+    mkAndroidBootImageQCDT
+    ;
 in
 {
   xiaomi-beryllium-tianma = buildTauchgangUBoot {
@@ -51,5 +56,14 @@ in
   };
   oneplus-enchilada-boot-image = mkAndroidBootImage {
     uboot = ubootPackages.oneplus-enchilada;
+  };
+
+  fairphone-fp5 = buildTauchgangUBoot {
+    pname = "fairphone-fp5";
+    dtb = "qcom/qcm6490-fairphone-fp5";
+    defconfig = "qcom_defconfig qcom-phone.config";
+  };
+  fairphone-fp5-boot-image = mkAndroidBootImageV2 {
+    uboot = ubootPackages.fairphone-fp5;
   };
 }

@@ -1,0 +1,41 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] tee: qseecom: copy the request back when it is an inout memref
+
+An application may answer in the request buffer rather than in the
+response one. The FocalTech fingerprint application writes its result
+into the request's header at +8 and sets bit 31 of the command id there
+to say it answered; the Goodix one likewise treats the buffer it was
+handed as working memory. The vendor clients see this because their
+request and response are two regions of a single shared mapping.
+
+This driver stages the request in memory of its own and copies only the
+response back, so such an answer was lost. Copy the request back too
+when the caller passes it as an inout memref, which the parameter check
+already accepts.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+diff --git a/drivers/tee/qseecom/core.c b/drivers/tee/qseecom/core.c
+index 65e2dc7887ad..db82bae611f1 100644
+--- a/drivers/tee/qseecom/core.c
++++ b/drivers/tee/qseecom/core.c
+@@ -975,6 +975,18 @@ static int qseecom_tee_invoke_func(struct tee_context *ctx,
+ 		if (!ret) {
+ 			memcpy(rsp, b + rsp_off, rsp_size);
+ 
++			/*
++			 * An application may answer in the request rather than
++			 * in the response: the Goodix and FocalTech ones both
++			 * treat the buffer they were handed as theirs to write
++			 * back into, and a client that only reads the response
++			 * never sees that answer. Copy the request back when
++			 * the caller asked for it by passing an inout memref.
++			 */
++			if ((param[0].attr & TEE_IOCTL_PARAM_ATTR_TYPE_MASK) ==
++			    TEE_IOCTL_PARAM_ATTR_TYPE_MEMREF_INOUT)
++				memcpy(req, b, req_size);
++
+ 			off = PAGE_ALIGN(rsp_off + rsp_size);
+ 			for (k = 2; k < arg->num_params; k += 2) {
+ 				struct tee_shm *pshm = param[k + 1].u.memref.shm;

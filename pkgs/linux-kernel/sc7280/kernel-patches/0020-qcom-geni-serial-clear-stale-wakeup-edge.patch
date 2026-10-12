@@ -1,0 +1,69 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] serial: qcom-geni: drop a stale wakeup edge on suspend
+
+The dedicated wake IRQ of a geni UART watches for an edge on the RX line,
+and on platforms where that pin is routed through the PDC the edge latches
+in hardware even while the IRQ is masked. Any traffic on the way into
+suspend therefore leaves the wake IRQ pending.
+
+dpm_suspend_noirq() arms the wake IRQs before it runs a single noirq
+callback, so an edge latched earlier fires the moment the IRQ is armed:
+irq_pm_check_wakeup() disables it again, marks the system as having a
+wakeup pending, and freeze_secondary_cpus() bails out with "Wakeup
+pending. Abort CPU freeze". Nothing clears the latch, so the next attempt
+latches the same way and the machine can never suspend.
+
+On a Fairphone 5 this is reproducible on every single attempt: the
+Bluetooth controller on uart7 exchanges in-band sleep indications with the
+host as the port suspends, that RX activity latches the edge, and suspend
+aborts with "PM: Triggering wakeup from IRQ 154" naming the port's
+99c000.serial:wakeup line. Masking the port's wakeup (or powering the
+controller down) is the only way to suspend, and both cost wake-on-Bluetooth.
+
+Clear the pending state once the port has suspended. Devices below the port
+have already suspended by then -- for the case above the controller has
+finished its sleep handshake -- so the line is idle and the only edge that
+can be dropped is the stale one. An edge asserted after this point latches
+as usual and still wakes the system, so wake-on-Bluetooth keeps working.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+diff --git a/drivers/tty/serial/qcom_geni_serial.c b/drivers/tty/serial/qcom_geni_serial.c
+--- a/drivers/tty/serial/qcom_geni_serial.c
++++ b/drivers/tty/serial/qcom_geni_serial.c
+@@ -1974,6 +1974,7 @@
+ 	struct qcom_geni_serial_port *port = dev_get_drvdata(dev);
+ 	struct uart_port *uport = &port->uport;
+ 	struct qcom_geni_private_data *private_data = uport->private_data;
++	int ret;
+ 
+ 	/*
+ 	 * This is done so we can hit the lowest possible state in suspend
+@@ -1983,7 +1984,25 @@
+ 		geni_icc_set_tag(&port->se, QCOM_ICC_TAG_ACTIVE_ONLY);
+ 		geni_icc_set_bw(&port->se);
+ 	}
+-	return uart_suspend_port(private_data->drv, uport);
++	ret = uart_suspend_port(private_data->drv, uport);
++
++	/*
++	 * The dedicated wake IRQ watches an edge on RX and that edge latches
++	 * even while the IRQ is masked, so any traffic seen on the way down
++	 * leaves it pending. dpm_suspend_noirq() arms the wake IRQ before it
++	 * runs a single noirq callback, so an already pending edge fires at
++	 * once and aborts the suspend -- and does so on every retry, since the
++	 * next attempt latches the same way. Devices below this port have
++	 * suspended by the time we get here (a Bluetooth controller on this
++	 * UART has completed its in-band sleep handshake) and the line is
++	 * idle, so drop the stale edge. An edge asserted after this point
++	 * latches as usual and still wakes the system.
++	 */
++	if (!ret && port->wakeup_irq > 0)
++		irq_set_irqchip_state(port->wakeup_irq, IRQCHIP_STATE_PENDING,
++				      false);
++
++	return ret;
+ }
+ 
+ static int qcom_geni_serial_resume(struct device *dev)
