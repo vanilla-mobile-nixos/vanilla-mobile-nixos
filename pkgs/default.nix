@@ -30,6 +30,7 @@ in
   libcamera-fairphone5 = callPackage ./libcamera-fairphone5 { };
   libfprint-focaltech = callPackage ./libfprint-focaltech { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
+  modemmanager = callPackage ./modemmanager { inherit (pkgs) modemmanager; };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
   swclock-offset = callPackage ./swclock-offset { };
   usb-moded = callPackage ./usb-moded { };
