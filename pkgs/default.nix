@@ -28,6 +28,7 @@ in
   fairphone5-libcamera-tuning = callPackage ./fairphone5-libcamera-tuning { };
   fp5-fingerprint-tools = callPackage ./fp5-fingerprint-tools { };
   libcamera-fairphone5 = callPackage ./libcamera-fairphone5 { };
+  libfprint-focaltech = callPackage ./libfprint-focaltech { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
   swclock-offset = callPackage ./swclock-offset { };
