@@ -24,6 +24,7 @@ in
   hyprgrass = callPackage ./hyprgrass { inherit (pkgs.hyprlandPlugins) hyprgrass; };
   iio-hyprland = callPackage ./iio-hyprland { };
   pil-squasher = callPackage ./pil-squasher { };
+  fairphone5-libcamera-tuning = callPackage ./fairphone5-libcamera-tuning { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
   swclock-offset = callPackage ./swclock-offset { };
