@@ -9,6 +9,35 @@ let
   cfg = config.vanilla-mobile.disko;
 
   realBuildPkgs = self.inputs.nixpkgs.legacyPackages.${cfg.imageBuildSystem};
+
+  sectorSize = toString config.vanilla-mobile.deviceInfo.imageSectorSize;
+  hasPartitionTable = lib.any (disk: disk.content.type or null == "gpt") (
+    lib.attrValues config.disko.devices.disk
+  );
+
+  # The disko VM attaches images with `if=virtio`, which is always 512-byte
+  # sectors. A partition table has to be written with the device's real sector
+  # size, or U-Boot and the initrd won't find it.
+  sectorSizeQemu =
+    let
+      vmPkgs = config.disko.imageBuilder.pkgs;
+      qemu =
+        (import "${vmPkgs.path}/nixos/lib/qemu-common.nix" { inherit (vmPkgs) lib stdenv; }).qemuBinary
+          vmPkgs.qemu;
+    in
+    vmPkgs.writeShellScript "qemu-sector-size-${sectorSize}" ''
+      args=()
+      n=0
+      for arg in "$@"; do
+        if [[ $arg == file=*,if=virtio,* ]]; then
+          args+=("''${arg/,if=virtio,/,if=none,id=disk$n,}" -device "virtio-blk-pci,drive=disk$n,logical_block_size=${sectorSize},physical_block_size=${sectorSize}")
+          n=$((n + 1))
+        else
+          args+=("$arg")
+        fi
+      done
+      exec ${qemu} "''${args[@]}"
+    '';
 in
 {
   options.vanilla-mobile.disko = {
@@ -33,6 +62,9 @@ in
       enableBinfmt = true;
       pkgs = realBuildPkgs;
       kernelPackages = realBuildPkgs.linuxPackages;
+    }
+    // lib.optionalAttrs (hasPartitionTable && sectorSize != "512") {
+      qemu = "${sectorSizeQemu}";
     };
 
     # Grow the filesystem from the size of the image flashed to the full available

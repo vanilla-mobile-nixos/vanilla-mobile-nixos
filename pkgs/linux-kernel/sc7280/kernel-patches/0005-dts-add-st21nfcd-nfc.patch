@@ -1,0 +1,77 @@
+From: Marcus Ramberg <marcus@means.no>
+Subject: [PATCH] arm64: dts: qcom: qcm6490-fairphone-fp5: add the ST21NFCD NFC controller
+
+Describe the ST21NFCD NFC controller sitting on I2C9, so the raw-NCI/I2C
+driver can bind to it.
+
+The controller is at address 0x08 with a level-high interrupt on TLMM 41
+and reset on TLMM 38. There is no on-module crystal, so the reference
+clock is taken from the PMIC XO buffer (RPMH_LN_BB_CLK2). The I2C pads
+need pull-ups, which the on-board lines do not provide.
+
+Hardware details taken from the Fairphone 5 Android kernel source.
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 8583dae4d..64befd20c 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -1096,7 +1096,25 @@ redriver_ss_in: endpoint {
+ &i2c9 {
+ 	status = "okay";
+
+-	/* ST21NFC NFC @ 28 */
++	pinctrl-0 = <&qup_i2c9_data_clk_pullup>;
++
++	st21nfcd: nfc@8 {
++		compatible = "st,st21nfcd-i2c";
++		reg = <0x08>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
++
++		reset-gpios = <&tlmm 38 GPIO_ACTIVE_HIGH>;
++
++		clocks = <&rpmhcc RPMH_LN_BB_CLK2>;
++		clock-names = "nfc_ref_clk";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&nfc_reset_default>, <&nfc_clkreq_default>, <&nfc_irq_default>;
++
++		status = "okay";
++	};
+ 	/* VL53L3 ToF @ 29 */
+ };
+
+@@ -1766,6 +1784,30 @@ hall_sensor_default: hall-sensor-default-state {
+ 		drive-strength = <2>;
+ 		bias-pull-up;
+ 	};
++
++	nfc_reset_default: nfc-reset-default {
++		pins = "gpio38";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	nfc_clkreq_default: nfc-clkreq-default {
++		pins = "gpio39";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	nfc_irq_default: nfc-irq-default {
++		pins = "gpio41";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
++
++	qup_i2c9_data_clk_pullup: qup-i2c9-data-clk-pullup-state {
++		pins = "gpio36", "gpio37";
++		function = "qup11";
++		bias-pull-up;
++	};
+ };
+
+ &uart5 {

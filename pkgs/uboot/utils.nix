@@ -45,32 +45,43 @@
     {
       uboot,
       page_size ? 4096,
+      # Header v2 takes the DTB separately instead of appended to the kernel.
+      headerVersion ? 0,
     }:
+    let
+      v2 = headerVersion == 2;
+    in
     buildPackages.runCommand "${uboot.pname}-boot-image"
       {
         meta = {
           inherit (uboot.meta) license;
         };
       }
-      ''
-        gzip ${uboot}/u-boot-nodtb.bin -c > u-boot-nodtb.bin.gz
-        cat u-boot-nodtb.bin.gz ${uboot}/u-boot.dtb > u-boot.bin.gz
+      (
+        ''
+          gzip ${uboot}/u-boot-nodtb.bin -c > u-boot-nodtb.bin.gz
+        ''
+        + lib.optionalString (!v2) ''
+          cat u-boot-nodtb.bin.gz ${uboot}/u-boot.dtb > u-boot.bin.gz
+        ''
+        + ''
 
-        # Make an empty gzip archive to use as the ramdisk.
-        # Tauchgang does this "to make more compatible android boot images".
-        printf "\0" | gzip --stdout > "empty.gz"
+          # Make an empty gzip archive to use as the ramdisk.
+          # Tauchgang does this "to make more compatible android boot images".
+          printf "\0" | gzip --stdout > "empty.gz"
 
-        mkdir -p $out
+          mkdir -p $out
 
-        ${lib.getExe' buildPackages.android-tools "mkbootimg"} \
-          --base 0x0 \
-          --kernel_offset 0x8000 \
-          --pagesize ${toString page_size} \
-          --os_patch_level 2028-09-21 \
-          --ramdisk empty.gz \
-          --kernel u-boot.bin.gz \
-          -o $out/u-boot.img
-      '';
+          ${lib.getExe' buildPackages.android-tools "mkbootimg"} \
+            --base 0x0 \
+            --kernel_offset 0x8000 \
+            --pagesize ${toString page_size} \
+            --os_patch_level 2028-09-21 \
+            --ramdisk empty.gz \
+            --kernel ${if v2 then "u-boot-nodtb.bin.gz" else "u-boot.bin.gz"} \
+            ${lib.optionalString v2 "--header_version 2 --dtb_offset 0x01f00000 --dtb ${uboot}/u-boot.dtb "}-o $out/u-boot.img
+        ''
+      );
   mkAndroidBootImageQCDT =
     {
       uboot,

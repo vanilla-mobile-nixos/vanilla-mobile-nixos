@@ -1,0 +1,36 @@
+From: Marcus Ramberg <marcus@means.no>
+usb: typec: ucsi: run the connector change work on a freezable workqueue
+
+ucsi_connector_change() puts the connector work on system_wq, which is not
+frozen for suspend. A connector change that arrives while the system is going
+down -- or the one that wakes it, since a cable plug is a wakeup source -- is
+therefore handled with the devices still suspended.
+
+Use system_freezable_wq so the work is held until the freezer thaws, which
+happens after the devices have resumed. The EVENT_PENDING bit still coalesces
+events while the work is pending, so a deferred change is picked up with the
+state read at the time it finally runs.
+
+The same fix has been applied to the sibling notification path in
+pmic_glink_altmode.
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+--- a/drivers/usb/typec/ucsi/ucsi.c
++++ b/drivers/usb/typec/ucsi/ucsi.c
+@@ -1403,8 +1403,14 @@
+
+ 	con = &ucsi->connector[num - 1];
+
++	/*
++	 * Handling the change ends up in ->connector_status(), which on boards
++	 * with an off-SoC orientation switch or redriver talks to it over a bus
++	 * that may itself be suspended. Use a freezable queue so that the work
++	 * is not run until the devices are back.
++	 */
+ 	if (!test_and_set_bit(EVENT_PENDING, &ucsi->flags))
+-		schedule_work(&con->work);
++		queue_work(system_freezable_wq, &con->work);
+ }
+ EXPORT_SYMBOL_GPL(ucsi_connector_change);
+

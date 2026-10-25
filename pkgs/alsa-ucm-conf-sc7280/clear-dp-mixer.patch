@@ -1,0 +1,18 @@
+Clear the DisplayPort mixer when the DisplayPort-less use case is enabled.
+
+Without this, a DISPLAY_PORT_RX routing left behind by a previous session
+keeps MultiMedia1 fed into AFE port 68 after the link goes down, and every
+subsequent speaker playback fails with:
+
+  qcom-q6afe: AFE enable for port 0x6020 failed -110
+
+--- a/ucm2/Fairphone/fp5/HiFi.conf
++++ b/ucm2/Fairphone/fp5/HiFi.conf
+@@ -3,6 +3,7 @@
+ 
+ SectionVerb {
+ 	EnableSequence [
++		cset "name='DISPLAY_PORT_RX Audio Mixer MultiMedia1' 0"
+ 		cset "name='QUIN_MI2S_RX Audio Mixer MultiMedia1' 1"
+ 		cset "name='MultiMedia2 Mixer TX_CODEC_DMA_TX_3' 1"
+ 	]

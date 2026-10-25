@@ -4,7 +4,7 @@
   ...
 }:
 let
-  cfg = config.vanilla-mobile.soc.sdm845;
+  cfg = config.vanilla-mobile.soc.qualcomm;
 in
 {
   options.vanilla-mobile.soc.qualcomm = {
