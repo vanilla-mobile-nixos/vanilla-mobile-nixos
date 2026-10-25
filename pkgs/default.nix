@@ -22,6 +22,7 @@ in
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
   hyprgrass = callPackage ./hyprgrass { inherit (pkgs.hyprlandPlugins) hyprgrass; };
   iio-hyprland = callPackage ./iio-hyprland { };
+  pil-squasher = callPackage ./pil-squasher { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
   swclock-offset = callPackage ./swclock-offset { };
