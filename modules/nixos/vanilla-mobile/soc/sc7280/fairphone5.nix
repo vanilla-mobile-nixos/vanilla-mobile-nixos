@@ -196,6 +196,11 @@ in
           "${self.packages.fairphone5-libcamera-tuning}";
         systemd.user.services.wireplumber.environment.LIBCAMERA_IPA_CONFIG_PATH =
           "${self.packages.fairphone5-libcamera-tuning}";
+
+        services.q6voiced.settings = {
+          q6voice_card = 0;
+          q6voice_device = 7;
+        };
       }
       # DisplayPort audio
       (lib.mkIf config.vanilla-mobile.soc.sc7280.audio.enable {
