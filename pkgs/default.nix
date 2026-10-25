@@ -17,6 +17,7 @@ in
   fairphone5-firmware = callPackage ./fairphone5-firmware { };
 
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
+  alsa-ucm-conf-sc7280 = callPackage ./alsa-ucm-conf-sc7280 { };
 
   unudhcpd = callPackage ./unudhcpd { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
