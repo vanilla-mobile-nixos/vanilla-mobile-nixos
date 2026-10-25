@@ -15,6 +15,7 @@ in
   xiaomi-beryllium-firmware = callPackage ./xiaomi-beryllium-firmware { };
   oneplus-sdm845-firmware = callPackage ./oneplus-sdm845-firmware { };
   fairphone5-firmware = callPackage ./fairphone5-firmware { };
+  focal32-firmware = callPackage ./focal32-firmware { };
 
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
   alsa-ucm-conf-sc7280 = callPackage ./alsa-ucm-conf-sc7280 { };
