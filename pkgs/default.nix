@@ -26,6 +26,7 @@ in
   iio-hyprland = callPackage ./iio-hyprland { };
   pil-squasher = callPackage ./pil-squasher { };
   fairphone5-libcamera-tuning = callPackage ./fairphone5-libcamera-tuning { };
+  fp5-fingerprint-tools = callPackage ./fp5-fingerprint-tools { };
   libcamera-fairphone5 = callPackage ./libcamera-fairphone5 { };
   mobile-config-firefox = callPackage ./mobile-config-firefox { };
   ssu-sysinfo = callPackage ./ssu-sysinfo { };
