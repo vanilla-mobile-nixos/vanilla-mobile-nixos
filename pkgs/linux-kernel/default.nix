@@ -7,4 +7,5 @@ lib.concatMapAttrs
   })
   {
     linux_sdm845 = pkgs.callPackage ./sdm845 { };
+    linux_sc7280 = pkgs.callPackage ./sc7280 { kernelPatches = [ ]; };
   }
