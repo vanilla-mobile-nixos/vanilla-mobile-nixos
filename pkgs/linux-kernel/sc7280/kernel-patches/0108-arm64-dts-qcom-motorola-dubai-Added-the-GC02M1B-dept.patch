@@ -1,0 +1,133 @@
+From 7fa2b4917eca8466712843d612e44fc7c28b2901 Mon Sep 17 00:00:00 2001
+From: Lona Lit <artlav@mm.st>
+Date: Tue, 2 Jun 2026 21:40:14 +0200
+Subject: [PATCH 108/136] arm64: dts: qcom: motorola-dubai: Added the GC02M1B
+ depth camera node and dependencies
+
+Signed-off-by: Lona Lit <artlav@mm.st>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../qcom/sm7325-motorola-dubai-common.dtsi    | 64 +++++++++++++++++--
+ 1 file changed, 59 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+index 983a3f5cb4ca..504b74afeb07 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+@@ -105,6 +105,20 @@ framebuffer {
+ 		};
+ 	};
+ 
++	cam_dvdd0_1p05: dvdd0-1p05-regulator {
++		compatible = "regulator-fixed";
++
++		regulator-name = "vreg_dvdd0_1p05";
++		regulator-min-microvolt = <1050000>;
++		regulator-max-microvolt = <1050000>;
++		regulator-enable-ramp-delay = <233>;
++
++		gpio = <&tlmm 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		vin-supply = <&vreg_s8b_1p256>;
++	};
++
+ 	cam_dvdd3_1p05: dvdd3-1p05-regulator {
+ 		compatible = "regulator-fixed";
+ 
+@@ -741,6 +755,13 @@ csiphy2_ep: endpoint {
+ 				remote-endpoint = <&camera_s5kjn1_ep>;
+ 			};
+ 		};
++
++		port@3 {
++			csiphy3_ep: endpoint {
++				data-lanes = <0>;
++				remote-endpoint = <&camera_gc02m1b_ep>;
++			};
++		};
+ 	};
+ };
+ 
+@@ -798,6 +819,39 @@ camera_s5kjn1_ep: endpoint {
+ 	};
+ };
+ 
++&cci1 {
++	status = "okay";
++};
++
++&cci1_i2c1 {
++	sensor@37 {
++		compatible = "galaxycore,gc02m1b";
++		reg = <0x37>;
++
++		vddio-supply = <&cam_iovdd_1p8>;
++		vdda-supply = <&cam_avdd2_2p8>;
++
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		reset-gpios = <&tlmm 78 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&cam_mclk1_default>;
++		pinctrl-names = "default";
++
++		orientation = <1>; /* Back facing */
++		rotation = <90>; /* Not like the other cameras */
++
++		port {
++			camera_gc02m1b_ep: endpoint {
++				link-frequencies = /bits/ 64 <288000000>;
++				data-lanes = <0>;
++				remote-endpoint = <&csiphy3_ep>;
++			};
++		};
++	};
++};
++
+ &gcc {
+ 	protected-clocks = <GCC_CFG_NOC_LPASS_CLK>,
+ 			   <GCC_MSS_CFG_AHB_CLK>,
+@@ -882,25 +936,25 @@ wl2864c@29 {
+ 		vin2-supply = <&vreg_bob>;
+ 
+ 		regulators {
+-			/*dig*/ldo1 {
++			cam_dvdd1_1p05: ldo1 {
+ 				regulator-name = "ldo1";
+ 				regulator-min-microvolt = <600000>;
+ 				regulator-max-microvolt = <1800000>;
+ 			};
+ 
+-			ldo2 {
++			cam_dvdd2_1p2: ldo2 {
+ 				regulator-name = "ldo2";
+ 				regulator-min-microvolt = <600000>;
+ 				regulator-max-microvolt = <1800000>;
+ 			};
+ 
+-			/*ana*/ldo3 {
++			cam_avdd1_2p8: ldo3 {
+ 				regulator-name = "ldo3";
+ 				regulator-min-microvolt = <1200000>;
+ 				regulator-max-microvolt = <4300000>;
+ 			};
+ 
+-			/*ana*/ldo4 {
++			cam_avdd2_2p8: ldo4 {
+ 				regulator-name = "ldo4";
+ 				regulator-min-microvolt = <1200000>;
+ 				regulator-max-microvolt = <4300000>;
+@@ -912,7 +966,7 @@ cam_afvdd_2p8: ldo5 {
+ 				regulator-max-microvolt = <4300000>;
+ 			};
+ 
+-			/*ois*/ ldo6 {
++			cam_ois_vdd: ldo6 {
+ 				regulator-name = "ldo6";
+ 				regulator-min-microvolt = <1200000>;
+ 				regulator-max-microvolt = <4300000>;
+-- 
+2.55.0
+

@@ -1,0 +1,35 @@
+From 5303b49c9588195eb6df44f9d634dcad65539dd1 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 23 Oct 2026 15:56:13 +0530
+Subject: [PATCH 063/136] arm64: dts: qcom: sm7325-nothing-spacewar: Remove
+ unnecessary q6asmdai override
+
+We already have dai@0 with the same properties defined in kodiak.dtsi.
+This change has no effect on the resulting dtb.
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index 61b5f646482e..e45242c86cd1 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -1325,12 +1325,6 @@ dai@16 {
+ 	};
+ };
+ 
+-&q6asmdai {
+-	dai@0 {
+-		reg = <MSM_FRONTEND_DAI_MULTIMEDIA1>;
+-	};
+-};
+-
+ &qfprom {
+ 	vcc-supply = <&vdd_qfprom>;
+ };
+-- 
+2.55.0
+

@@ -1,0 +1,216 @@
+From 2e4bf1c085e57910ad16406fdf5f0f61b758834f Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Wed, 6 May 2026 18:12:52 -0300
+Subject: [PATCH 103/136] arm64: dts: qcom: motorola-dubai: Add camera [XXX]
+
+Signed-off-by: Val Packett <val@packett.cool>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../qcom/sm7325-motorola-dubai-common.dtsi    | 163 ++++++++++++++++++
+ 1 file changed, 163 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+index c2faddfb69e6..ecc4fedecdb0 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+@@ -33,6 +33,20 @@ aliases {
+ 		wifi0 = &wifi;
+ 	};
+ 
++	cam_avdd0_2p8: avdd0-2p8-regulator {
++		compatible = "regulator-fixed";
++
++		regulator-name = "vreg_avdd0_2p8";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-enable-ramp-delay = <233>;
++
++		gpio = <&tlmm 79 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		vin-supply = <&vreg_bob>;
++	};
++
+ 	chosen {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+@@ -58,6 +72,20 @@ framebuffer {
+ 		};
+ 	};
+ 
++	cam_dvdd3_1p05: dvdd3-1p05-regulator {
++		compatible = "regulator-fixed";
++
++		regulator-name = "vreg_dvdd3_1p05";
++		regulator-min-microvolt = <1050000>;
++		regulator-max-microvolt = <1050000>;
++		regulator-enable-ramp-delay = <233>;
++
++		gpio = <&tlmm 63 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		vin-supply = <&vreg_s8b_1p256>;
++	};
++
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 
+@@ -667,6 +695,76 @@ vreg_bob: bob {
+ 	};
+ };
+ 
++&camss {
++	vdda-phy-supply = <&vreg_l10c_0p88>;
++	vdda-pll-supply = <&vreg_l6b_1p2>;
++
++	status = "okay";
++
++	ports {
++		port@2 {
++			csiphy2_ep: endpoint {
++				data-lanes = <0 1 2 3>;
++				remote-endpoint = <&camera_s5kjn1_ep>;
++			};
++		};
++	};
++};
++
++&cci0 {
++	status = "okay";
++};
++
++&cci0_i2c1 {
++	ak7375_s5kjn1: camera-lens@c {
++		compatible = "asahi-kasei,ak7375";
++		reg = <0x0c>;
++
++		vdd-supply = <&cam_afvdd_2p8>;
++		vio-supply = <&cam_iovdd_1p8>;
++	};
++
++	eeprom@50 {
++		compatible = "giantec,gt24p128e",
++			     "atmel,24c128";
++		reg = <0x50>;
++
++		vcc-supply = <&cam_iovdd_1p8>;
++
++		read-only;
++	};
++
++	sensor@56 {
++		compatible = "samsung,s5kjn1";
++		reg = <0x56>;
++
++		afvdd-supply = <&cam_afvdd_2p8>;
++		vddio-supply = <&cam_iovdd_1p8>;
++		vddd-supply = <&cam_dvdd3_1p05>;
++		vdda-supply = <&cam_avdd0_2p8>;
++
++		clocks = <&camcc CAM_CC_MCLK3_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK3_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		reset-gpios = <&tlmm 21 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&cam_mclk3_default>;
++		pinctrl-names = "default";
++
++		orientation = <1>; /* Back facing */
++		rotation = <270>;
++
++		lens-focus = <&ak7375_s5kjn1>;
++
++		port {
++			camera_s5kjn1_ep: endpoint {
++				link-frequencies = /bits/ 64 <700000000>;
++				remote-endpoint = <&csiphy2_ep>;
++			};
++		};
++	};
++};
++
+ &gcc {
+ 	protected-clocks = <GCC_CFG_NOC_LPASS_CLK>,
+ 			   <GCC_MSS_CFG_AHB_CLK>,
+@@ -704,6 +802,63 @@ &i2c4 {
+ 
+ 	status = "okay";
+ 
++	wl2864c@29 {
++		compatible = "willsemi,wl2864c";
++		reg = <0x29>;
++
++		semi,cs-gpios = <&tlmm 62 GPIO_ACTIVE_HIGH>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&cam_pmic_en_default>;
++
++		vin1-supply = <&vreg_s8b_1p256>;
++		vin2-supply = <&vreg_bob>;
++
++		regulators {
++			/*dig*/ldo1 {
++				regulator-name = "ldo1";
++				regulator-min-microvolt = <600000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			ldo2 {
++				regulator-name = "ldo2";
++				regulator-min-microvolt = <600000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			/*ana*/ldo3 {
++				regulator-name = "ldo3";
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <4300000>;
++			};
++
++			/*ana*/ldo4 {
++				regulator-name = "ldo4";
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <4300000>;
++			};
++
++			cam_afvdd_2p8: ldo5 {
++				regulator-name = "ldo5";
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <4300000>;
++			};
++
++			/*ois*/ ldo6 {
++				regulator-name = "ldo6";
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <4300000>;
++			};
++
++			cam_iovdd_1p8: ldo7 {
++				regulator-name = "ldo7";
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <4300000>;
++			};
++		};
++	};
++
+ 	typec-mux@42 {
+ 		compatible = "fcs,fsa4480";
+ 		reg = <0x42>;
+@@ -1376,6 +1531,14 @@ aw86224_int_default: aw86224-int-default-state {
+ 		bias-pull-up;
+ 	};
+ 
++	cam_pmic_en_default: cam-pmic-en-default-state {
++		pins = "gpio62";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++		output-low;
++	};
++
+ 	mdp_vsync_p: mdp-vsync-p-state {
+ 		pins = "gpio80";
+ 		function = "mdp_vsync";
+-- 
+2.55.0
+

@@ -1,0 +1,32 @@
+From d56a354fa42a8e65513e52cad459b39eb3745752 Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Fri, 16 Oct 2026 04:31:51 -0300
+Subject: [PATCH 008/136] FROMGIT ASoC: dt-bindings: qcom,sm8250: Add Motorola
+ Edge 30 sound card
+
+Document the bindings for the sound card on motorola-dubai which uses the
+Elite DSP architecture.
+
+Signed-off-by: Val Packett <val@packett.cool>
+Link: https://patch.msgid.link/20261016073157.611956-4-val@packett.cool
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ Documentation/devicetree/bindings/sound/qcom,sm8250.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/sound/qcom,sm8250.yaml b/Documentation/devicetree/bindings/sound/qcom,sm8250.yaml
+index 1536fcd96d68..d60e0ca4ccf3 100644
+--- a/Documentation/devicetree/bindings/sound/qcom,sm8250.yaml
++++ b/Documentation/devicetree/bindings/sound/qcom,sm8250.yaml
+@@ -36,6 +36,7 @@ properties:
+           - ayaneo,pocket-s2-sndcard
+           - fairphone,fp4-sndcard
+           - fairphone,fp5-sndcard
++          - motorola,dubai-sndcard
+           - qcom,apq8096-sndcard
+           - qcom,glymur-sndcard
+           - qcom,qcm6490-idp-sndcard
+-- 
+2.55.0
+

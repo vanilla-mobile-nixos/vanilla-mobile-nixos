@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mahadevan P <mahadevan.p@oss.qualcomm.com>
+Date: Wed, 29 Apr 2026 12:10:39 +0530
+Subject: [PATCH 06/20] arm64: dts: qcom: kodiak: Enable 4-lane DP via QMP
+ Combo PHY
+
+Backport of upstream v2 series:
+  https://lore.kernel.org/all/20260429-kodiak_v2-v2-0-c3a703cc30eb@oss.qualcomm.com
+
+Changes:
+1. Add mode-switch property to QMP Combo PHY so it responds to USB-C
+   Alt Mode negotiation and switches into 4-lane DP configuration.
+2. Add data-lanes = <0 1 2 3> to mdss_dp_out endpoint in SoC dtsi
+   (PHY-to-controller wiring is fixed in silicon).
+3. Remove redundant data-lanes override from qcm6490-fairphone-fp5.dts
+   now covered by the SoC dtsi.
+
+Signed-off-by: Mahadevan P <mahadevan.p@oss.qualcomm.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/kodiak.dtsi               | 3 +++
+ arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts | 5 -----
+ 2 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index 2d01c4ab2cc7..3198746f94a8 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -4351,6 +4351,8 @@ usb_1_qmpphy: phy@88e8000 {
+ 			#clock-cells = <1>;
+ 			#phy-cells = <1>;
+ 
++			mode-switch;
++
+ 			orientation-switch;
+ 
+ 			ports {
+@@ -5765,6 +5767,7 @@ dp_in: endpoint {
+ 					port@1 {
+ 						reg = <1>;
+ 						mdss_dp_out: endpoint {
++							data-lanes = <0 1 2 3>;
+ 							remote-endpoint = <&usb_dp_qmpphy_dp_in>;
+ 						};
+ 					};
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 64befd20c41c..5cf3123a3a28 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -1177,11 +1177,6 @@ &mdss {
+ &mdss_dp {
+ 	status = "okay";
+ };
+-
+-&mdss_dp_out {
+-	data-lanes = <0 1>;
+-};
+-
+ &mdss_dsi {
+ 	vdda-supply = <&vreg_l6b>;
+ 	status = "okay";

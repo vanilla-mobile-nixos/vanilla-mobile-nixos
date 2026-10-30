@@ -1,0 +1,37 @@
+From 2129b4a04cdebb47eaaeb67009048c799bfb0dbc Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Thu, 27 Aug 2026 08:13:56 +0200
+Subject: [PATCH 052/136] arm64: dts: qcom: qcm6490-fairphone-fp5: Add PMIC SID
+ comments
+
+Make it obvious which PMIC lives at which address by looking at the
+include list.
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index e3c229afd58f..2bc8a4c96143 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -18,10 +18,10 @@
+ #include <dt-bindings/sound/qcom,q6asm.h>
+ #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
+ #include "kodiak.dtsi"
+-#include "pm7250b.dtsi"
+-#include "pm7325.dtsi"
+-#include "pm8350c.dtsi" /* PM7350C */
+-#include "pmk8350.dtsi" /* PMK7325 */
++#include "pm7250b.dtsi" /* SID-8 & SID-9 */
++#include "pm7325.dtsi"  /* SID-1 */
++#include "pm8350c.dtsi" /* SID-2 (PM7350C) */
++#include "pmk8350.dtsi" /* SID-0 (PMK7325) */
+ 
+ /delete-node/ &rmtfs_mem;
+ 
+-- 
+2.55.0
+

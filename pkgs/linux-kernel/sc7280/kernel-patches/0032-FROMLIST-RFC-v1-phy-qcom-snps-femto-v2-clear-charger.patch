@@ -1,0 +1,105 @@
+From 8d2ba6ddde514f27fe4caa08aef758fed53d3c3d Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Mon, 12 Oct 2026 18:15:05 +0200
+Subject: [PATCH 032/136] FROMLIST RFC v1 phy: qcom: snps-femto-v2: clear
+ charger-detection state on entry to host mode
+
+On QCM6490 (Fairphone 5), the firmware runs BC1.2 charger detection over
+pmic_glink when the phone sinks power from a USB-C dock. It leaves the HS
+PHY in UTMI non-driving mode with the datapath override enabled:
+
+  UTMI_CTRL0 (0x3c)    OPMODE = NONDRIVING                 01 -> 09
+  CFG0 (0x94)          UTMI_PHY_DATAPATH_CTRL_OVERRIDE_EN  00 -> 01
+  HS_PHY_CTRL2 (0x64)  USB2_SUSPEND_N_SEL                  06 -> 0e
+
+Linux never writes these fields. They match the configuration the
+downstream kernel uses for charger detection (its "dpdm" regulator); the
+downstream kernel re-initialises the PHY afterwards. Any femto re-init
+clears the state, but on mainline nothing re-inits the PHY after
+detection. When the dock then swaps the phone to host role, the
+controller cannot drive the bus. The HS chirp fails, the hub enumerates at
+full speed, and SET_ADDRESS times out (-62). The state persists into
+later sessions until the PHY is re-initialised.
+
+Clear OPMODE and the datapath override when the PHY is set to a host
+mode. usb_add_hcd() sets the root hub PHYs to PHY_MODE_USB_HOST_SS before
+it starts the host controller, so the clear lands before any port
+activity, on every entry to host mode. The clear is idempotent: when dwc3
+sets PHY_MODE_USB_HOST again after host init, it finds the fields clean
+and writes nothing. On platforms where nothing outside this driver
+touches these fields, the function only reads them.
+
+USB2_SUSPEND_N_SEL is left alone: HS works with it set, and clearing it
+has not been tested.
+
+Tested on Fairphone 5 (7.0.8-sc7280) with an i-tec USB-C dock: the
+unpatched kernel failed every sink attach (15/15) and the control arm of
+an A/B on the same image failed 2/2; the patched kernel enumerated HS on
+every latched attach (3/3, with DP and charging working), and has been
+in daily use since.
+
+[This change was developed by "D.R.racer", who doesn't want to have
+ their legal name referenced. But they agreed on me taking the change.]
+Assisted-by: LLM
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/phy/qualcomm/phy-qcom-snps-femto-v2.c | 36 +++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-snps-femto-v2.c b/drivers/phy/qualcomm/phy-qcom-snps-femto-v2.c
+index 980ad1fb1e2e..e2b9404aac4f 100644
+--- a/drivers/phy/qualcomm/phy-qcom-snps-femto-v2.c
++++ b/drivers/phy/qualcomm/phy-qcom-snps-femto-v2.c
+@@ -226,12 +226,48 @@ static int __maybe_unused qcom_snps_hsphy_runtime_resume(struct device *dev)
+ 	return qcom_snps_hsphy_resume(hsphy);
+ }
+ 
++/*
++ * Charger detection run by firmware (BC1.2 on QCM6490 with pmic_glink) puts the
++ * PHY into UTMI non-driving mode with the datapath override enabled and can
++ * leave it there. The controller then cannot drive the bus, so the HS chirp
++ * fails. Only a PHY re-init clears this, and nothing re-inits the PHY after
++ * detection. Clear the state; this is a no-op unless something outside this
++ * driver set it.
++ */
++static void qcom_snps_hsphy_clear_chg_det(struct qcom_snps_hsphy *hsphy)
++{
++	u32 ctrl0 = readl_relaxed(hsphy->base + USB2_PHY_USB_PHY_UTMI_CTRL0);
++	u32 cfg0 = readl_relaxed(hsphy->base + USB2_PHY_USB_PHY_CFG0);
++
++	if (!(ctrl0 & OPMODE_MASK) && !(cfg0 & UTMI_PHY_DATAPATH_CTRL_OVERRIDE_EN))
++		return;
++
++	dev_dbg(&hsphy->phy->dev,
++		"clearing charger-detection state (ctrl0 %#x cfg0 %#x)\n",
++		ctrl0, cfg0);
++
++	qcom_snps_hsphy_write_mask(hsphy->base, USB2_PHY_USB_PHY_UTMI_CTRL0,
++				   OPMODE_MASK, OPMODE_NORMAL);
++	qcom_snps_hsphy_write_mask(hsphy->base, USB2_PHY_USB_PHY_CFG0,
++				   UTMI_PHY_DATAPATH_CTRL_OVERRIDE_EN, 0);
++}
++
+ static int qcom_snps_hsphy_set_mode(struct phy *phy, enum phy_mode mode,
+ 				    int submode)
+ {
+ 	struct qcom_snps_hsphy *hsphy = phy_get_drvdata(phy);
+ 
+ 	hsphy->mode = mode;
++
++	/*
++	 * Reached from usb_add_hcd() before the host controller starts.
++	 * phy_initialized only changes in .init/.exit, which phy-core runs
++	 * under phy->mutex, like this callback.
++	 */
++	if (hsphy->phy_initialized &&
++	    (mode == PHY_MODE_USB_HOST || mode == PHY_MODE_USB_HOST_SS))
++		qcom_snps_hsphy_clear_chg_det(hsphy);
++
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+

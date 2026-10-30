@@ -1,0 +1,46 @@
+From f03ed084e3150704ca2712b7d10a308e5d870657 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@lucaweiss.eu>
+Date: Sat, 10 Oct 2026 14:44:07 +0200
+Subject: [PATCH 023/136] FROMLIST v1 dt-bindings: arm: qcom: Add Samsung
+ Galaxy Book2 Go
+
+The Samsung Galaxy Book2 Go is a laptop with a Snapdragon 7c+ Gen 3 SoC
+(SC7280).
+
+It appears to exist in three variants:
+
+  NP340XNAA-EXP:
+    4GB RAM + 128GB UFS, WiFi-only (NP340XNA-KA1UK)
+
+  NP345XNAA-EXP:
+    4GB RAM + 128GB UFS, 5G (NP345XNA-KA1UK)
+    8GB RAM + 256GB UFS, 5G (NP345XNA-KA2UK)
+
+The internal code name is Hermes2-14.
+
+Signed-off-by: Luca Weiss <luca@lucaweiss.eu>
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index ff8a35df7862..5048e878b7ca 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -887,6 +887,11 @@ properties:
+           - const: google,zombie-sku514
+           - const: qcom,sc7280
+ 
++      - items:
++          - enum:
++              - samsung,galaxy-book2-go
++          - const: qcom,sc7280
++
+       - items:
+           - enum:
+               - lenovo,flex-5g
+-- 
+2.55.0
+

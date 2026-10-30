@@ -1,0 +1,58 @@
+From dcf04b3a9acb4998e436cf51e3c7e40933bcb437 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Tue, 29 Sep 2026 23:29:14 +0200
+Subject: [PATCH 106/136] arm64: dts: qcom: sm7325-motorola-dubai: Fix up
+ right/left speaker mixup
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../dts/qcom/sm7325-motorola-dubai-common.dtsi     | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+index 77d37094ef94..983a3f5cb4ca 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+@@ -835,32 +835,30 @@ &i2c1 {
+ 
+ 	status = "okay";
+ 
+-	/* Top speaker / ear speaker */
+-	aw88261_l: audio-codec@34 {
++	/* Bottom speaker */
++	aw88261_r: audio-codec@34 {
+ 		compatible = "awinic,aw88261";
+ 		reg = <0x34>;
+ 
+ 		dvdd-supply = <&vreg_l18b_1p8>;
+-		sound-name-prefix = "Amplifier L";
++		sound-name-prefix = "Amplifier R";
+ 		firmware-name = "qcom/sm7325/motorola/dubai/aw88261_acf.bin";
+ 
+ 		awinic,audio-channel = <0>;
+-		awinic,sync-flag;
+ 
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
+-	/* Bottom speaker */
+-	aw88261_r: audio-codec@35 {
++	/* Top speaker / ear speaker */
++	aw88261_l: audio-codec@35 {
+ 		compatible = "awinic,aw88261";
+ 		reg = <0x35>;
+ 
+ 		dvdd-supply = <&vreg_l18b_1p8>;
+-		sound-name-prefix = "Amplifier R";
++		sound-name-prefix = "Amplifier L";
+ 		firmware-name = "qcom/sm7325/motorola/dubai/aw88261_acf.bin";
+ 
+ 		awinic,audio-channel = <1>;
+-		awinic,sync-flag;
+ 
+ 		#sound-dai-cells = <0>;
+ 	};
+-- 
+2.55.0
+

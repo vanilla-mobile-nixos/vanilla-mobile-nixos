@@ -1,0 +1,142 @@
+From 6957b445611b3284aba267d95b3b8744edcb462f Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Tue, 1 Sep 2026 11:20:56 +0200
+Subject: [PATCH 001/136] FROMGIT arm64: dts: qcom: qcm6490-fairphone-fp5: Add
+ parent supply for regulators
+
+Add the vdd-*-supply properties to the rpmh-regulators nodes, so that
+the parent regulators can be enabled when needed.
+
+PM7325's l3 and l5 are supplied by vreg_s2b ("ebi.lvl"), however since
+that regulator is not modelled as regulator, skip the -supply
+properties for those two LDOs.
+
+And document what the "missing" regulators are used for.
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260901-fp5-regulator-supply-v1-1-189fee0c1dba@fairphone.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/qcm6490-fairphone-fp5.dts   | 54 +++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index f41ad446a39e..e9bf2faf6628 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -196,6 +196,17 @@ vreg_usb_redrive_1v8: regulator-usb-redrive-1v8 {
+ 		pinctrl-names = "default";
+ 	};
+ 
++	vph_pwr: regulator-vph-pwr {
++		compatible = "regulator-fixed";
++
++		regulator-name = "vph_pwr";
++		regulator-min-microvolt = <3700000>;
++		regulator-max-microvolt = <3700000>;
++
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
+ 	vreg_vtof_ldo_2p8: regulator-vtof-ldo-2p8 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "VTOF_LDO_2P8";
+@@ -372,6 +383,18 @@ active-config0 {
+ &apps_rsc {
+ 	regulators-0 {
+ 		compatible = "qcom,pm7325-rpmh-regulators";
++
++		vdd-l1-l4-l12-l15-supply = <&vreg_s7b>;
++		vdd-l2-l7-supply = <&vreg_bob>;
++		vdd-l6-l9-l10-supply = <&vreg_s8b>;
++		vdd-l8-supply = <&vreg_s7b>;
++		vdd-l11-l17-l18-l19-supply = <&vreg_s1b>;
++		vdd-l13-supply = <&vreg_s7b>;
++		vdd-l14-l16-supply = <&vreg_s8b>;
++		vdd-s1-supply = <&vph_pwr>;
++		vdd-s7-supply = <&vph_pwr>;
++		vdd-s8-supply = <&vph_pwr>;
++
+ 		qcom,pmic-id = "b";
+ 
+ 		vreg_s1b: smps1 {
+@@ -380,6 +403,12 @@ vreg_s1b: smps1 {
+ 			regulator-max-microvolt = <2040000>;
+ 		};
+ 
++		/*
++		 * s2b (smps2) is ebi.lvl
++		 * s3b-s4b-s5b (smps3-smps4-smps5) is VDD_APC1
++		 * s6b (smps6) is VDD_APC0
++		 */
++
+ 		vreg_s7b: smps7 {
+ 			regulator-name = "vreg_s7b";
+ 			regulator-min-microvolt = <535000>;
+@@ -414,6 +443,11 @@ vreg_l3b: ldo3 {
+ 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+ 		};
+ 
++		/*
++		 * l4b (ldo4) is lmx.lvl
++		 * l5b (ldo5) is lcx.lvl
++		 */
++
+ 		vreg_l6b: ldo6 {
+ 			regulator-name = "vreg_l6b";
+ 			regulator-min-microvolt = <1140000>;
+@@ -443,6 +477,8 @@ vreg_l9b: ldo9 {
+ 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+ 		};
+ 
++		/* l10b (ldo10) is PMK7325 VDD_ACTIVE */
++
+ 		vreg_l11b: ldo11 {
+ 			regulator-name = "vreg_l11b";
+ 			regulator-min-microvolt = <1504000>;
+@@ -509,6 +545,16 @@ vreg_l19b: ldo19 {
+ 
+ 	regulators-1 {
+ 		compatible = "qcom,pm8350c-rpmh-regulators";
++
++		vdd-bob-supply = <&vph_pwr>;
++		vdd-l1-l12-supply = <&vreg_s1b>;
++		vdd-l2-l8-supply = <&vreg_s1b>;
++		vdd-l3-l4-l5-l7-l13-supply = <&vreg_bob>;
++		vdd-l6-l9-l11-supply = <&vreg_bob>;
++		vdd-l10-supply = <&vreg_s7b>;
++		vdd-s1-supply = <&vph_pwr>;
++		vdd-s9-supply = <&vph_pwr>;
++
+ 		qcom,pmic-id = "c";
+ 
+ 		vreg_s1c: smps1 {
+@@ -518,6 +564,12 @@ vreg_s1c: smps1 {
+ 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+ 		};
+ 
++		/*
++		 * s2c-s3c-s4c (smps2-smps3-smps4) is cx.lvl
++		 * s5c-s6c (smps5-smps6) is mss.lvl
++		 * s7c-s8c (smps7-smps8) is gfx.lvl
++		 */
++
+ 		vreg_s9c: smps9 {
+ 			regulator-name = "vreg_s9c";
+ 			regulator-min-microvolt = <1010000>;
+@@ -525,6 +577,8 @@ vreg_s9c: smps9 {
+ 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+ 		};
+ 
++		/* s10c (smps10) is mx.lvl */
++
+ 		vreg_l1c: ldo1 {
+ 			regulator-name = "vreg_l1c";
+ 			regulator-min-microvolt = <1800000>;
+-- 
+2.55.0
+

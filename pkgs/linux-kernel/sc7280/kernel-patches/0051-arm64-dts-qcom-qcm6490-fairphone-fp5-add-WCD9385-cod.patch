@@ -1,0 +1,230 @@
+From 95c5f1f1e2ea3318fbddb977b53a895b0a6a2f7b Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 21 Mar 2025 17:09:18 +0100
+Subject: [PATCH 051/136] arm64: dts: qcom: qcm6490-fairphone-fp5: add WCD9385
+ codec
+
+On Fairphone 5 WCD9385 codec is used for microphones and type-c analog
+audio headset. Enable relevant lpass macros, pinctrl, and dai links
+required for that.
+
+Co-developed-by: Bhushan Shah <bhushan.shah@machinesoul.in>
+Signed-off-by: Bhushan Shah <bhushan.shah@machinesoul.in>
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/qcm6490-fairphone-fp5.dts   | 152 ++++++++++++++++++
+ 1 file changed, 152 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 37f170bbc69f..e3c229afd58f 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -35,6 +35,36 @@ aliases {
+ 		serial1 = &uart7;
+ 	};
+ 
++	wcd9385: audio-codec {
++		compatible = "qcom,wcd9385-codec";
++
++		pinctrl-0 = <&wcd_reset_n>;
++		pinctrl-1 = <&wcd_reset_n_sleep>;
++		pinctrl-names = "default", "sleep";
++
++		reset-gpios = <&tlmm 83 GPIO_ACTIVE_LOW>;
++
++		vdd-rxtx-supply = <&vreg_l18b>;
++		vdd-io-supply = <&vreg_l18b>;
++		vdd-buck-supply = <&vreg_l17b>;
++		vdd-mic-bias-supply = <&vreg_bob>;
++
++		qcom,micbias1-microvolt = <1800000>;
++		qcom,micbias2-microvolt = <1800000>;
++		qcom,micbias3-microvolt = <1800000>;
++		qcom,micbias4-microvolt = <1800000>;
++
++		qcom,mbhc-buttons-vthreshold-microvolt = <75000 150000 237000 500000 500000
++							  500000 500000 500000>;
++		qcom,mbhc-headset-vthreshold-microvolt = <1700000>;
++		qcom,mbhc-headphone-vthreshold-microvolt = <50000>;
++
++		qcom,rx-device = <&wcd_rx>;
++		qcom,tx-device = <&wcd_tx>;
++
++		#sound-dai-cells = <1>;
++	};
++
+ 	chosen {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+@@ -1080,6 +1110,47 @@ &lpass_audiocc {
+ 	/delete-property/ power-domains;
+ };
+ 
++&lpass_rx_macro {
++	status = "okay";
++};
++
++&lpass_rx_swr_clk {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-disable;
++};
++
++&lpass_rx_swr_data {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-bus-hold;
++};
++
++&lpass_tx_macro {
++	status = "okay";
++};
++
++&lpass_tx_swr_clk {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-disable;
++};
++
++&lpass_tx_swr_data {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-bus-hold;
++};
++
++&lpass_va_macro {
++	vdd-micb-supply = <&vreg_bob>;
++
++	/* No DMIC used on Fairphone 5 */
++	qcom,dmic-sample-rate = <4800000>;
++
++	status = "okay";
++};
++
+ &mdss {
+ 	status = "okay";
+ };
+@@ -1406,6 +1477,15 @@ &sound {
+ 	pinctrl-names = "default",
+ 			"sleep";
+ 
++	audio-routing = "AMIC1", "MIC BIAS1",
++			"AMIC2", "MIC BIAS2",
++			"AMIC3", "MIC BIAS1",
++			"AMIC4", "MIC BIAS3",
++			"TX SWR_INPUT0", "ADC1_OUTPUT",
++			"TX SWR_INPUT1", "ADC2_OUTPUT",
++			"TX SWR_INPUT4", "ADC3_OUTPUT",
++			"TX SWR_INPUT5", "ADC4_OUTPUT";
++
+ 	mm1-dai-link {
+ 		link-name = "MultiMedia1";
+ 
+@@ -1414,6 +1494,22 @@ cpu {
+ 		};
+ 	};
+ 
++	mm2-dai-link {
++		link-name = "MultiMedia2";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
++		};
++	};
++
++	mm3-dai-link {
++		link-name = "MultiMedia3";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
++		};
++	};
++
+ 	i2s-dai-link {
+ 		link-name = "Quinary MI2S Playback";
+ 
+@@ -1461,6 +1557,22 @@ platform {
+ 			sound-dai = <&q6routing>;
+ 		};
+ 	};
++
++	wcd-capture-dai-link {
++		link-name = "WCD Capture";
++
++		codec {
++			sound-dai = <&wcd9385 1>, <&swr1 0>, <&lpass_tx_macro 0>;
++		};
++
++		cpu {
++			sound-dai = <&q6afedai TX_CODEC_DMA_TX_3>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++	};
+ };
+ 
+ &spi13 {
+@@ -1479,6 +1591,26 @@ touchscreen@0 {
+ 	};
+ };
+ 
++&swr0 {
++	status = "okay";
++
++	wcd_rx: codec@0,4 {
++		compatible = "sdw20217010d00";
++		reg = <0 4>;
++		qcom,rx-port-mapping = <1 2 3 4 5>;
++	};
++};
++
++&swr1 {
++	status = "okay";
++
++	wcd_tx: codec@0,3 {
++		compatible = "sdw20217010d00";
++		reg = <0 3>;
++		qcom,tx-port-mapping = <1 2 3 4>;
++	};
++};
++
+ &tlmm {
+ 	/*
+ 	 * 32-33: SMB1394 (SPMI)
+@@ -1568,6 +1700,19 @@ mdp_vsync: mdp-vsync-state {
+ 		bias-pull-down;
+ 	};
+ 
++	wcd_reset_n: wcd-reset-n-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <16>;
++	};
++
++	wcd_reset_n_sleep: wcd-reset-n-sleep-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
++
+ 	bluetooth_enable_default: bluetooth-enable-default-state {
+ 		pins = "gpio85";
+ 		function = "gpio";
+@@ -1705,3 +1850,10 @@ &wifi {
+ 	qcom,calibration-variant = "Fairphone_5";
+ 	status = "okay";
+ };
++
++// TODO: Figure out TX macro versions
++// See https://lore.kernel.org/linux-arm-msm/20260526-sc7280-tx-macro-v1-0-1aad6900fec0@fairphone.com/t/
++&lpass_tx_macro {
++	compatible = "qcom,sm7325-lpass-tx-macro",
++		     "qcom,sm8450-lpass-tx-macro"; // txmacro = v9.2
++};
+-- 
+2.55.0
+

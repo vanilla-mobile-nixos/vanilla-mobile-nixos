@@ -1,0 +1,51 @@
+From 9a1f99a5519b21cc52eddedd0e9036dcbacfe6f4 Mon Sep 17 00:00:00 2001
+From: Kurt Morris <kurt.morris@me.com>
+Date: Tue, 6 Oct 2026 19:02:55 -0700
+Subject: [PATCH 065/136] arm64: dts: qcom: sm7325-nothing-spacewar: Add
+ MultiMedia2 and MultiMedia3
+
+Add two more q6asm front ends and their dai-links. MultiMedia3 is the
+capture PCM for the WCD9385 microphones, routed from TX_CODEC_DMA_TX_3.
+
+MultiMedia2 is reserved for headphone playback through the WCD9385 on
+RX_CODEC_DMA_RX_0, which this board doesn't wire up yet. It is added now
+so the PCM device numbers stay the same once it is: the ALSA UCM
+configuration opens MultiMedia3 and VoiceMMode1 by device number.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Kurt Morris <kurt.morris@me.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-nothing-spacewar.dts    | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index 60ce8461cd33..14523c1387f2 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -1478,6 +1478,22 @@ cpu {
+ 		};
+ 	};
+ 
++	mm2-dai-link {
++		link-name = "MultiMedia2";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
++		};
++	};
++
++	mm3-dai-link {
++		link-name = "MultiMedia3";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
++		};
++	};
++
+ 	i2s-dai-link {
+ 		link-name = "I2S Playback";
+ 
+-- 
+2.55.0
+

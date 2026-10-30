@@ -1,0 +1,79 @@
+From 49c2c4f79f8b05f7704c1e8a2bf1b75e7590b829 Mon Sep 17 00:00:00 2001
+From: Stanislav Zaikin <zstaseg@gmail.com>
+Date: Thu, 12 Jun 2025 15:44:24 +0200
+Subject: [PATCH 075/136] arm64: dts: qcom: sm7325-xiaomi-taoyao: Add display
+
+Signed-off-by: Stanislav Zaikin <zstaseg@gmail.com>
+[luca.weiss@fairphone.com: Split out from original bringup commit]
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-xiaomi-taoyao.dts    | 46 +++++++++++++++++--
+ 1 file changed, 42 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts b/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts
+index 87f267aaeec0..d5b37209bb54 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts
+@@ -580,10 +580,6 @@ vreg_bob: bob {
+ 	};
+ };
+ 
+-&dispcc {
+-	status = "disabled";
+-};
+-
+ &gcc {
+ 	protected-clocks = <GCC_CFG_NOC_LPASS_CLK>,
+ 			   <GCC_MSS_CFG_AHB_CLK>,
+@@ -649,6 +645,48 @@ &lpass_audiocc {
+ 	/delete-property/ power-domains;
+ };
+ 
++&mdss {
++	status = "okay";
++};
++
++&mdss_dsi {
++	vdda-supply = <&vreg_l6b_1p2>;
++
++	status = "okay";
++
++	panel@0 {
++		compatible = "xiaomi,taoyao-panel";
++		reg = <0>;
++
++		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
++
++		vdd-supply = <&vreg_l13c_3p0>;
++		vddio-supply = <&vreg_l12c_1p8>;
++		dvdd-supply = <&vreg_oled_dvdd>;
++
++		pinctrl-0 = <&sde_dsi_active>, <&sde_te_active_sleep>;
++		pinctrl-1 = <&sde_dsi_sleep>, <&sde_te_active_sleep>;
++		pinctrl-names = "default", "sleep";
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&mdss_dsi0_out>;
++			};
++		};
++	};
++};
++
++&mdss_dsi0_out {
++	data-lanes = <0 1 2 3>;
++	remote-endpoint = <&panel_in>;
++};
++
++&mdss_dsi_phy {
++	vdds-supply = <&vreg_l10c_0p88>;
++
++	status = "okay";
++};
++
+ &pm7325_gpios {
+ 	key_vol_up: key-vol-up-n-state {
+ 		pins = "gpio6";
+-- 
+2.55.0
+
