@@ -1,0 +1,35 @@
+From 950dd40abc3ea43b471bee3923ed29f0d6dc8a41 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 28 Aug 2026 14:55:25 +0200
+Subject: [PATCH 037/136] clk: qcom: dispcc-sc7280: Don't park mdp_clk_src at
+ registration time
+
+Parking disp_cc_mdss_mdp_clk_src causes the framebuffer to flash. Unlike
+other platforms, the framebuffer continues working after a bit.
+
+Still, switch to &clk_rcg2_shared_no_init_park_ops like on many other
+SoCs, to avoid this problem.
+
+Fixes: 01a0a6cc8cfd ("clk: qcom: Park shared RCGs upon registration")
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/clk/qcom/dispcc-sc7280.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/qcom/dispcc-sc7280.c b/drivers/clk/qcom/dispcc-sc7280.c
+index d11265debaf9..2b4cff9872db 100644
+--- a/drivers/clk/qcom/dispcc-sc7280.c
++++ b/drivers/clk/qcom/dispcc-sc7280.c
+@@ -307,7 +307,7 @@ static struct clk_rcg2 disp_cc_mdss_mdp_clk_src = {
+ 		.name = "disp_cc_mdss_mdp_clk_src",
+ 		.parent_data = disp_cc_parent_data_4,
+ 		.num_parents = ARRAY_SIZE(disp_cc_parent_data_4),
+-		.ops = &clk_rcg2_shared_ops,
++		.ops = &clk_rcg2_shared_no_init_park_ops,
+ 	},
+ };
+ 
+-- 
+2.55.0
+

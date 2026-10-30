@@ -1,0 +1,44 @@
+From 081c54bb16dc2986c0ff477cb86f11dff8403a02 Mon Sep 17 00:00:00 2001
+From: Jianping Li <jianping.li@oss.qualcomm.com>
+Date: Thu, 15 Oct 2026 15:15:08 +0800
+Subject: [PATCH 025/136] FROMLIST v1 arm64: dts: qcom: kodiak: Make the ADSP
+ remote heap no-map
+
+The ADSP remote heap is declared as a reusable CMA pool. FastRPC
+assigns the entire region to the DSP through qcom_scm_assign_mem()
+during probe without allocating the pages from CMA. Consequently,
+the pages remain available for movable HLOS allocations even after
+HLOS access to the region has been revoked.
+
+On Kodiak, a synchronous external abort was reported during storage
+testing when the kernel accessed memory within the ADSP remote heap.
+The faulting address was outside the HLOS stage-2 mapping.
+
+Replace reusable with no-map to prevent the region from being reused
+for normal kernel allocations and exclude it from the kernel's
+standard memory mapping.
+
+Fixes: 9d7d847ff1c50 ("arm64: dts: qcom: kodiak: avoid EFI overlap for ADSP remote heap")
+Link: https://lore.kernel.org/all/20260423063502.484-1-jianping.li@oss.qualcomm.com/
+Signed-off-by: Jianping Li <jianping.li@oss.qualcomm.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/kodiak.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index 347815e5983e..49e7b799c207 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -194,7 +194,7 @@ rmtfs_mem: rmtfs@9c900000 {
+ 		adsp_rpc_remote_heap_mem: adsp-rpc-remote-heap {
+ 			compatible = "shared-dma-pool";
+ 			alloc-ranges = <0x0 0x80000000 0x0 0x80000000>;
+-			reusable;
++			no-map;
+ 			alignment = <0x0 0x400000>;
+ 			size = <0x0 0x800000>;
+ 		};
+-- 
+2.55.0
+

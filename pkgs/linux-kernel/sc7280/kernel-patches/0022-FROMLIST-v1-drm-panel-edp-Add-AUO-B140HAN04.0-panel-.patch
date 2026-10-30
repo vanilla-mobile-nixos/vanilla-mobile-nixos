@@ -1,0 +1,42 @@
+From 9437654fcc61aaec624624f2612fc0d81a45f6c0 Mon Sep 17 00:00:00 2001
+From: Jasper Korten <jja2000@gmail.com>
+Date: Sun, 17 Aug 2025 19:36:15 +0200
+Subject: [PATCH 022/136] FROMLIST v1 drm/panel-edp: Add AUO B140HAN04.0 panel
+ entry
+
+Add an entry for the B140HAN04.0 eDP panel. It is found on the Samsung
+Galaxy Book2 Go.
+
+$ edid-decode /sys/class/drm/card0-eDP-1/edid
+
+00 ff ff ff ff ff ff 00 06 af a9 65 00 00 00 00
+28 20 01 04 a5 1f 11 78 02 9b 85 92 56 59 90 29
+20 50 54 00 00 00 01 01 01 01 01 01 01 01 01 01
+01 01 01 01 01 01 14 37 80 b8 70 38 24 40 10 10
+3e 00 35 ae 10 00 00 18 00 00 00 0f 00 00 00 00
+00 00 00 00 00 00 00 00 00 20 00 00 00 fe 00 41
+55 4f 0a 20 20 20 20 20 20 20 20 20 00 00 00 fe
+00 42 31 34 30 48 41 4e 30 34 2e 30 20 0a 00 ed
+
+Signed-off-by: Jasper Korten <jja2000@gmail.com>
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/gpu/drm/panel/panel-edp.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/gpu/drm/panel/panel-edp.c b/drivers/gpu/drm/panel/panel-edp.c
+index 2b455369ed70..73cdc2d37ab7 100644
+--- a/drivers/gpu/drm/panel/panel-edp.c
++++ b/drivers/gpu/drm/panel/panel-edp.c
+@@ -1986,6 +1986,7 @@ static const struct edp_panel_entry edp_panels[] = {
+ 	EDP_PANEL_ENTRY('A', 'U', 'O', 0x635c, &delay_200_500_e50, "B116XAN06.3"),
+ 	EDP_PANEL_ENTRY('A', 'U', 'O', 0x639c, &delay_200_500_e50, "B140HAK02.7"),
+ 	EDP_PANEL_ENTRY('A', 'U', 'O', 0x643d, &delay_200_500_e50, "B140HAN06.4"),
++	EDP_PANEL_ENTRY('A', 'U', 'O', 0x65a9, &delay_200_500_e50, "B140HAN04.0"),
+ 	EDP_PANEL_ENTRY('A', 'U', 'O', 0x67a8, &delay_200_500_e200, "B140XTK02.4"),
+ 	EDP_PANEL_ENTRY('A', 'U', 'O', 0x723c, &delay_200_500_e50, "B140XTN07.2"),
+ 	EDP_PANEL_ENTRY('A', 'U', 'O', 0x73aa, &delay_200_500_e50, "B116XTN02.3"),
+-- 
+2.55.0
+

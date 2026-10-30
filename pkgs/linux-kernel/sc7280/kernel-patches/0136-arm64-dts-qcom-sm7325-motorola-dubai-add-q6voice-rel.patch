@@ -1,0 +1,67 @@
+From 7a0dfc4ec7e6114f653b826d0dc634d75d55250d Mon Sep 17 00:00:00 2001
+From: Federico Amedeo Izzo <federico@izzo.pro>
+Date: Sat, 1 Aug 2026 16:22:38 +0200
+Subject: [PATCH 136/136] arm64: dts: qcom: sm7325-motorola-dubai: add q6voice
+ related nodes
+
+Signed-off-by: Federico Amedeo Izzo <federico@izzo.pro>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../qcom/sm7325-motorola-dubai-common.dtsi    | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+index 504b74afeb07..ef91986a1fb9 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+@@ -18,6 +18,7 @@
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include <dt-bindings/sound/qcom,q6afe.h>
+ #include <dt-bindings/sound/qcom,q6asm.h>
++#include <dt-bindings/sound/qcom,q6voice.h>
+ 
+ #include "sm7325.dtsi"
+ #include "pm7325.dtsi"
+@@ -1323,6 +1324,24 @@ dai@0 {
+ 	};
+ };
+ 
++&q6cvp {
++	status = "okay";
++};
++
++&q6cvs {
++	status = "okay";
++};
++
++&q6mvm {
++	status = "okay";
++};
++
++&q6voicedai {
++	dai@1 {
++		reg = <VOICEMMODE1>;
++	};
++};
++
+ &qfprom {
+ 	vcc-supply = <&vdd_qfprom>;
+ };
+@@ -1491,6 +1510,14 @@ platform {
+ 		};
+ 	};
+ 
++	voicemmode1-dai-link {
++		link-name = "VoiceMMode1";
++
++		cpu {
++			sound-dai = <&q6voicedai VOICEMMODE1>;
++		};
++	};
++
+ 	wcd-capture-dai-link {
+ 		link-name = "WCD Capture";
+ 
+-- 
+2.55.0
+

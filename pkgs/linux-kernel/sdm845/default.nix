@@ -1,7 +1,7 @@
 # How to update:
 # - Have a local copy of <https://gitlab.com/sdm845-mainline/linux.git>.
-# - Vendor the patches using `./update-kernel-patches.sh`. Using Git forge
-#   compare APIs aren't reliable for this.
+# - Vendor the patches using `../update-kernel-patches.sh sdm845 <repo> <Linux tag> <sdm845 tag>`.
+#   Using Git forge compare APIs aren't reliable for this.
 # - Update the base NixOS kernel version that is being overridden.
 # - Check for changes to `sdm845.config` and `misc.config`. Ex: `git diff sdm845-6.11 sdm845-6.14-rc5 -- arch/arm64/configs/sdm845.config`
 # - Apply changes to `structuredExtraConfig` and `config_fixes.patch` as needed.
@@ -24,8 +24,11 @@
   lib,
   fetchurl,
   buildLinux,
-  kernelPatches,
+  linuxKernel,
   stdenv,
+  # From `boot.kernelPatches` via `kernel.override`. Must be passed explicitly,
+  # callPackage would fill in `pkgs.kernelPatches`.
+  kernelPatches ? [ ],
   ...
 }:
 let
@@ -43,11 +46,6 @@ let
       isLTS = false;
       modDirVersion = lib.versions.pad 3 version;
       extraMeta.branch = "7.1";
-
-      kernelPatches = [
-        kernelPatches.bridge_stp_helper
-        kernelPatches.request_key_helper
-      ];
     };
   version = "${kernel.version}-sdm845";
 in
@@ -61,14 +59,22 @@ kernel.override {
     };
   };
 
-  kernelPatches = (import ./kernel-patches) ++ [
-    {
-      # Some sort of ordering issue with parts of structuredExtraConfig.
-      # <https://git.pavluk.org/chayleaf/dotfiles/src/branch/master/system/hardware/oneplus-enchilada/config_fixes_611.patch>.
-      name = "config-fixes";
-      patch = ./config_fixes.patch;
-    }
-  ];
+  kernelPatches =
+    with linuxKernel.kernelPatches;
+    [
+      bridge_stp_helper
+      request_key_helper
+    ]
+    ++ (import ./kernel-patches)
+    ++ [
+      {
+        # Some sort of ordering issue with parts of structuredExtraConfig.
+        # <https://git.pavluk.org/chayleaf/dotfiles/src/branch/master/system/hardware/oneplus-enchilada/config_fixes_611.patch>.
+        name = "config-fixes";
+        patch = ../config_fixes.patch;
+      }
+    ]
+    ++ kernelPatches;
 
   # Remove some mostly raspberry pi specific stuff.
   # See <https://github.com/NixOS/nixpkgs/blob/master/lib/systems/platforms.nix>

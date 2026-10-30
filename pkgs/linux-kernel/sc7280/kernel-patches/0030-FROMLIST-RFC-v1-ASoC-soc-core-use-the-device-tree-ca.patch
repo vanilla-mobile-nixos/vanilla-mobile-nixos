@@ -1,0 +1,45 @@
+From aeea05095dcef5c2641dee0b6a202c647ad308e2 Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Wed, 6 May 2026 00:58:55 -0300
+Subject: [PATCH 030/136] FROMLIST RFC v1 ASoC: soc-core: use the device tree
+ card name as long_name
+
+When setting the model property for the sound card on an OF/DT system,
+the expectation is that that model name would be used in the UCM config
+path lookup. However, the DT model name was only used as the "short"
+name, which gets overriden by the "long" name during loading, and
+the "long" name is automatically set based on DMI data if available.
+As a result, adding an intermediate bootloader such as U-Boot which
+provides DMI data on a device that didn't have it before would break
+the UCM config loading by suddenly looking at the "wrong" path.
+
+Fix by assigning the DT model name to the long_name field as well.
+
+Signed-off-by: Val Packett <val@packett.cool>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/soc-core.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index b9c70268d49f..fa8248eb794a 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -2863,6 +2863,14 @@ int snd_soc_of_parse_card_name(struct snd_soc_card *card,
+ 		return ret;
+ 	}
+ 
++	/*
++	 * When setting the OF property in a device tree, the expectation is
++	 * that the UCM config matching the value would be loaded. However if
++	 * a long_name is set, it would be used in the config path instead, and
++	 * snd_soc_set_dmi_name sets long_name to the DMI name if it's unset.
++	 */
++	card->long_name = card->name;
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(snd_soc_of_parse_card_name);
+-- 
+2.55.0
+

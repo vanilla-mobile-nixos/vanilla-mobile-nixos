@@ -1,0 +1,85 @@
+From 50cf48d4da292f435fd3d3150087197c3449f24e Mon Sep 17 00:00:00 2001
+From: Casey Connolly <casey.connolly@linaro.org>
+Date: Mon, 6 May 2024 12:02:53 +0200
+Subject: [PATCH 071/136] arm64: dts: qcom: qcm6490-shift-otter: Add downstream
+ touch
+
+add in the cruddy downstream touchscreen.
+
+Signed-off-by: Casey Connolly <casey.connolly@linaro.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/qcm6490-shift-otter.dts     | 50 ++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts b/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts
+index f35171de615e..6b49a3734f29 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts
+@@ -549,7 +549,27 @@ &i2c9 {
+ &i2c13 {
+ 	status = "okay";
+ 
+-	/* focaltech FT3658U @ 38 */
++	touchscreen@38 {
++		compatible = "focaltech,fts";
++		reg = <0x38>;
++
++		/* FIXME!!!! */
++		interrupt-parent = <&tlmm>;
++		interrupts = <81 0x2008>;
++
++		vdd-supply = <&vreg_l3c>;
++		vcc_i2c-supply = <&vreg_l12c>;
++
++		focaltech,reset-gpio = <&tlmm 105 GPIO_ACTIVE_HIGH>;
++		focaltech,irq-gpio = <&tlmm 81 0x2008>;
++		focaltech,max-touch-number = <10>;
++		focaltech,display-coords = <0 0 1080 2400>;
++
++		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend", "pmx_ts_release";
++		pinctrl-0 = <&pmx_ts_active>;
++		pinctrl-1 = <&pmx_ts_int_suspend &pmx_ts_reset_suspend>;
++		pinctrl-2 = <&pmx_ts_release>;
++	};
+ };
+ 
+ &ipa {
+@@ -951,6 +971,34 @@ sw_ctrl_default: sw-ctrl-default-state {
+ 		function = "gpio";
+ 		bias-pull-down;
+ 	};
++
++	pmx_ts_active: pmx-ts-active-state {
++		pins = "gpio105", "gpio81";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-pull-up;
++	};
++
++	pmx_ts_int_suspend: pmx-ts-int-suspend-state {
++		pins = "gpio81";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
++
++	pmx_ts_release: pmx-ts-release-state {
++		pins = "gpio105", "gpio81";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	pmx_ts_reset_suspend: pmx-ts-reset-suspend-state {
++		pins = "gpio105";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
+ };
+ 
+ &uart5 {
+-- 
+2.55.0
+

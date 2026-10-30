@@ -1,0 +1,33 @@
+From 0ea1f8b40e85b7d44f331b0ea279a0cc3539fa57 Mon Sep 17 00:00:00 2001
+From: David Heidelberg <david@ixit.cz>
+Date: Wed, 29 Jul 2026 22:19:56 +0200
+Subject: [PATCH 011/136] FROMLIST v9 media: qcom: camss: csiphy-3ph: Fix lane
+ mask calculation
+
+The lane mask must be multiplied by 2, but this was accidentally omitted.
+
+Reviewed-by: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+Suggested-by: Nihal Kumar Gupta <nihal.gupta@oss.qualcomm.com>
+Signed-off-by: David Heidelberg <david@ixit.cz>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
+index dac8d2ecf799..7c8c0e41bc62 100644
+--- a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
++++ b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
+@@ -1119,7 +1119,7 @@ static u8 csiphy_get_lane_mask(struct csiphy_lanes_cfg *lane_cfg)
+ 	lane_mask = CSIPHY_3PH_CMN_CSI_COMMON_CTRL5_CLK_ENABLE;
+ 
+ 	for (i = 0; i < lane_cfg->num_data; i++)
+-		lane_mask |= 1 << lane_cfg->data[i].pos;
++		lane_mask |= BIT(lane_cfg->data[i].pos * 2);
+ 
+ 	return lane_mask;
+ }
+-- 
+2.55.0
+

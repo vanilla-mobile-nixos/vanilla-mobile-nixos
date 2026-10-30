@@ -1,0 +1,56 @@
+From 7231423395f3ef791ee2e82379aa9cc6feb18f1f Mon Sep 17 00:00:00 2001
+From: Richard Acayan <mailingradian@gmail.com>
+Date: Sat, 7 Mar 2026 08:19:19 -0500
+Subject: [PATCH 128/136] ASoC: qdsp6: q6voice: Constify APR callback response
+ data
+
+The client callback for q6voice should not modify the response, as noted
+for the other clients in commit 86af3c229245 ("ASoC: qcom: Constify APR
+callback response data") upstream. Mark the response data as const in
+q6voice to be compatible with the API change.
+
+Signed-off-by: Richard Acayan <mailingradian@gmail.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/qcom/qdsp6/q6voice-common.c | 4 ++--
+ sound/soc/qcom/qdsp6/q6voice-common.h | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sound/soc/qcom/qdsp6/q6voice-common.c b/sound/soc/qcom/qdsp6/q6voice-common.c
+index f821d619e16a..e0a5e4eea84e 100644
+--- a/sound/soc/qcom/qdsp6/q6voice-common.c
++++ b/sound/soc/qcom/qdsp6/q6voice-common.c
+@@ -162,7 +162,7 @@ q6voice_session_create(enum q6voice_service_type type,
+ EXPORT_SYMBOL_GPL(q6voice_session_create);
+ 
+ static void q6voice_session_callback(struct q6voice_session *s,
+-				     struct apr_resp_pkt *data)
++				     const struct apr_resp_pkt *data)
+ {
+ 	struct aprv2_ibasic_rsp_result_t *result = data->payload;
+ 	unsigned long flags;
+@@ -197,7 +197,7 @@ static void q6voice_session_callback(struct q6voice_session *s,
+ 	wake_up(&s->wait);
+ }
+ 
+-int q6voice_common_callback(struct apr_device *adev, struct apr_resp_pkt *data)
++int q6voice_common_callback(struct apr_device *adev, const struct apr_resp_pkt *data)
+ {
+ 	struct device *dev = &adev->dev;
+ 	struct q6voice_service *v = dev_get_drvdata(dev);
+diff --git a/sound/soc/qcom/qdsp6/q6voice-common.h b/sound/soc/qcom/qdsp6/q6voice-common.h
+index 6fb3c9560b2e..48735a935c3f 100644
+--- a/sound/soc/qcom/qdsp6/q6voice-common.h
++++ b/sound/soc/qcom/qdsp6/q6voice-common.h
+@@ -33,7 +33,7 @@ struct q6voice_session {
+ int q6voice_common_probe(struct apr_device *adev, enum q6voice_service_type type);
+ void q6voice_common_remove(struct apr_device *adev);
+ 
+-int q6voice_common_callback(struct apr_device *adev, struct apr_resp_pkt *data);
++int q6voice_common_callback(struct apr_device *adev, const struct apr_resp_pkt *data);
+ int q6voice_common_send(struct q6voice_session *s, struct apr_hdr *hdr);
+ 
+ struct q6voice_session *q6voice_session_create(enum q6voice_service_type type,
+-- 
+2.55.0
+

@@ -1,13 +1,16 @@
 # How to update:
-# - Bump `version` and `tag` to the new `sc7280-mainline` release, and the pmaports
-#   commit of the base config.
-# - Refresh `kernel-patches`, dropping any that have been merged. The QSEECOM TEE
-#   driver comes from <https://github.com/wrobelda/linux/tree/qcom-qseecom-tee>.
+# - Have a local copy of <https://github.com/sc7280-mainline/linux>.
+# - Vendor the patches using `../update-kernel-patches.sh sc7280 <repo> <Linux tag> <sc7280 tag>`.
+# - Update the base Linux version below.
+# - Refresh `fp5-patches` on top of the new sc7280 tag, dropping any that have been
+#   merged. The QSEECOM TEE driver comes from <https://github.com/wrobelda/linux/tree/qcom-qseecom-tee>.
+# - Check for changes to `fp5_defconfig`. Ex: `git diff v7.3.0-sc7280 <new tag> -- arch/arm64/configs/fp5_defconfig`
+# - See `../sdm845/default.nix` for how to check the config.
 {
   lib,
-  fetchFromGitHub,
+  fetchurl,
+  buildLinux,
   linuxKernel,
-  runCommand,
   stdenv,
   # From `boot.kernelPatches` via `kernel.override`. Must be passed explicitly,
   # callPackage would fill in `pkgs.kernelPatches`.
@@ -15,112 +18,115 @@
   ...
 }:
 let
-  version = "7.3.0";
-
-  # Built from the postmarketOS config instead of the NixOS one. Evaluated at
-  # eval time, so the passthru `config` below doesn't need IFD.
-  pmosConfig = builtins.fetchurl {
-    url = "https://gitlab.postmarketos.org/postmarketOS/pmaports/-/raw/c9dbdc23ae775aa5cea8b857c123f1696c04528f/device/community/linux-postmarketos-qcom-sc7280/config-postmarketos-qcom-sc7280.aarch64";
-    sha256 = "1vjffmn4wx6b6yxp7cn80qpzm744n8h5wci5xwxrpf5f17rq9w87";
-  };
-
-  extraConfig = {
-    # NixOS asserts this is enabled.
-    DMIID = "y";
-    # A built-in legacy gadget driver claims the UDC at boot, and every configfs
-    # gadget then fails to bind with -EBUSY.
-    U_SERIAL_CONSOLE = "y";
-    USB_G_SERIAL = "m";
-    # NixOS firewall.
-    NETFILTER_XT_MATCH_PKTTYPE = "m";
-    NETFILTER_XT_MATCH_LIMIT = "m";
-    NETFILTER_XT_MATCH_RECENT = "m";
-    NETFILTER_XT_MATCH_STATE = "m";
-    NETFILTER_XT_TARGET_LOG = "m";
-    NETFILTER_XT_TARGET_CONNMARK = "m";
-    NETFILTER_XT_MATCH_CONNMARK = "m";
-    NFT_FIB = "y";
-    NFT_FIB_INET = "y";
-    WIREGUARD = "m";
-    # Waydroid.
-    ANDROID_BINDERFS = "y";
-    TYPEC_DP_ALTMODE = "y";
-    # The CLF is a plain NCI controller, driven by the st21nfc-nci patch.
-    NFC = "m";
-    NFC_NCI = "m";
-    NFC_ST21NFC_NCI = "m";
-    # systemd-boot under U-Boot's UEFI environment.
-    EFI = "y";
-    EFI_STUB = "y";
-    EFI_ZBOOT = "y";
-    # cams only registers subdevs once every sensor in the DT has bound.
-    VIDEO_IMX800 = "m";
-    # Fingerprint sensor.
-    TEE_QSEECOM = "m";
-    MISC_FOCALTECH_FP = "m";
-    # The FP5 DT has a VoiceMMode1 link; without q6voice the card never probes.
-    SND_SOC_QDSP6_Q6VOICE = "y";
-  }
-  // lib.filterAttrs (_: v: v != null) (
-    lib.mapAttrs (_: v: v.tristate or v.freeform) (
-      lib.mergeAttrsList (map (p: p.structuredExtraConfig or { }) kernelPatches)
-    )
-  );
-
-  configfile = runCommand "linux-sc7280-config" { } ''
-    cat ${pmosConfig} > $out
-    cat >> $out <<'EOF'
-    ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: value: "CONFIG_${name}=${value}") extraConfig
-    )}
-    EOF
-  '';
-
-  config =
+  kernel =
     let
-      parseLine =
-        line:
-        let
-          m = builtins.match "(CONFIG_[^=]+)=([ym])" line;
-        in
-        lib.optional (m != null) (lib.nameValuePair (lib.elemAt m 0) (lib.elemAt m 1));
+      version = "7.3";
     in
-    lib.listToAttrs (lib.concatMap parseLine (lib.splitString "\n" (builtins.readFile pmosConfig)))
-    // lib.mapAttrs' (name: lib.nameValuePair "CONFIG_${name}") extraConfig;
+    buildLinux {
+      src = fetchurl {
+        url = "mirror://kernel/linux/kernel/v${lib.versions.major version}.x/linux-${version}.tar.xz";
+        hash = "sha256:0ls902gz6h1ydcnwx2zzdcglg52f14hmaxk2ncg341hfy4j3qdl7";
+      };
+      inherit version;
+      isLTS = false;
+      modDirVersion = lib.versions.pad 3 version;
+      extraMeta = {
+        branch = "7.3";
+        maintainers = with lib.maintainers; [ marcusramberg ];
+        platforms = [ "aarch64-linux" ];
+      };
+    };
 in
-linuxKernel.manualConfig {
-  inherit
-    lib
-    version
-    configfile
-    config
-    ;
-  modDirVersion = version;
+kernel.override {
+  kernelPatches =
+    with linuxKernel.kernelPatches;
+    [
+      bridge_stp_helper
+      request_key_helper
+    ]
+    ++ (import ./kernel-patches)
+    ++ (import ./fp5-patches)
+    ++ [
+      {
+        # Some sort of ordering issue with parts of structuredExtraConfig.
+        name = "config-fixes";
+        patch = ../config_fixes.patch;
+      }
+    ]
+    ++ kernelPatches;
 
-  src = fetchFromGitHub {
-    owner = "sc7280-mainline";
-    repo = "linux";
-    tag = "v7.3.0-sc7280";
-    name = "linux-sc7280-src";
-    hash = "sha256-l9W0MnX2g1x34aDFKqMF79hERGIj6eRIeaE6353nvsc=";
+  # Remove some mostly raspberry pi specific stuff.
+  stdenv = lib.recursiveUpdate stdenv {
+    hostPlatform.linux-kernel.extraConfig = "";
   };
-
-  kernelPatches = import ./kernel-patches ++ kernelPatches;
-
-  # manualConfig doesn't default this like generic.nix does. systemd-repart
-  # asserts it.
-  features.efiBootStub = true;
 
   # Needs to match `system.boot.loader.kernelFile`.
   target = "vmlinuz.efi";
-  stdenv = stdenv.override {
-    hostPlatform = stdenv.hostPlatform // {
-      linux-kernel = stdenv.hostPlatform.linux-kernel // {
-        target = "vmlinuz.efi";
-        installTarget = "zinstall";
-      };
-    };
-  };
 
-  extraMeta.platforms = [ "aarch64-linux" ];
+  # To deal with all the unused option errors.
+  ignoreConfigErrors = true;
+  structuredExtraConfig = with lib.kernel; {
+    # systemd-boot under U-Boot's UEFI environment.
+    EFI_ZBOOT = yes;
+
+    # Root lives on UFS.
+    SCSI_UFSHCD = yes;
+    SCSI_UFSHCD_PLATFORM = yes;
+    SCSI_UFS_QCOM = yes;
+    RPMB = yes;
+    PHY_QCOM_QMP = yes;
+    PHY_QCOM_QMP_UFS = yes;
+    QCOM_INLINE_CRYPTO_ENGINE = yes;
+
+    # Display and touch for the initrd LUKS prompt. Their clock, DMA and bus
+    # providers aren't pulled into the initrd as module dependencies.
+    DRM_MSM = yes;
+    SC_DISPCC_7280 = yes;
+    SC_GPUCC_7280 = yes;
+    QCOM_GPI_DMA = yes;
+    I2C_QCOM_GENI = yes;
+    SPI_QCOM_GENI = yes;
+
+    # USB, so a gadget console works from the initrd.
+    PHY_QCOM_QMP_COMBO = yes;
+    PHY_QCOM_QMP_USB = yes;
+    PHY_QCOM_USB_SNPS_FEMTO_V2 = yes;
+    TYPEC = yes;
+
+    # Same as sdm845.
+    QCOM_LLCC = yes;
+    QCOM_SOCINFO = yes;
+    QCOM_RMTFS_MEM = yes;
+    QCOM_APR = yes;
+    POWER_RESET_QCOM_PON = yes;
+    QCOM_SPMI_TEMP_ALARM = yes;
+    INTERCONNECT_QCOM_OSM_L3 = yes;
+    RPMSG_QCOM_GLINK_SMEM = yes;
+
+    # A built-in legacy gadget driver claims the UDC at boot, and every configfs
+    # gadget then fails to bind with -EBUSY.
+    U_SERIAL_CONSOLE = yes;
+    USB_G_SERIAL = module;
+
+    TYPEC_DP_ALTMODE = module;
+
+    # ModemManager uses QMI over QRTR. Probing these AT ports resets them and
+    # slows modem startup.
+    RPMSG_WWAN_CTRL = no;
+
+    # The CLF is a plain NCI controller, driven by the st21nfc-nci patch.
+    NFC = module;
+    NFC_NCI = module;
+    NFC_ST21NFC_NCI = module;
+
+    # cams only registers subdevs once every sensor in the DT has bound.
+    VIDEO_IMX800 = module;
+
+    # Fingerprint sensor.
+    TEE_QSEECOM = module;
+    MISC_FOCALTECH_FP = module;
+
+    # The FP5 DT has a VoiceMMode1 link; without q6voice the card never probes.
+    SND_SOC_QDSP6_Q6VOICE = module;
+  };
 }

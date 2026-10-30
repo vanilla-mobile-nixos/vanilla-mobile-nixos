@@ -1,0 +1,145 @@
+From 69f1de4a1f20e3b7c1ad4b6919d712c4e5445c67 Mon Sep 17 00:00:00 2001
+From: Danila Tikhonov <danila@jiaxyga.com>
+Date: Mon, 22 Jul 2024 23:54:29 +0300
+Subject: [PATCH 058/136] arm64: dts: qcom: sm7325-nothing-spacewar: Add Mi2s
+ sound support
+
+Signed-off-by: Danila Tikhonov <danila@jiaxyga.com>
+Co-developed-by: jaylfc <jaylfc25@gmail.com>
+Signed-off-by: jaylfc <jaylfc25@gmail.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-nothing-spacewar.dts | 103 +++++++++++++++++-
+ 1 file changed, 101 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index c176b921db42..6bcd4a75f9e2 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -1021,8 +1021,31 @@ &i2c2 {
+ 	clock-frequency = <100000>;
+ 	status = "okay";
+ 
+-	/* nxp,tfa9873 (EAR speaker codec) @ 34 */
+-	/* nxp,tfa9873 (Main speaker codec) @ 35 */
++	/* Top speaker */
++	tfa9873_l: audio-codec@34 {
++		compatible = "nxp,tfa9873",
++			     "nxp,tfa9872";
++		reg = <0x34>;
++		reset-gpio = <&tlmm 101 GPIO_ACTIVE_HIGH>;
++
++		sound-channel = <0>;
++		sound-name-prefix = "Amplifier L";
++
++		#sound-dai-cells = <1>;
++	};
++
++	/* Bottom speaker */
++	tfa9873_r: audio-codec@35 {
++		compatible = "nxp,tfa9873",
++			     "nxp,tfa9872";
++		reg = <0x35>;
++		reset-gpio = <&tlmm 101 GPIO_ACTIVE_HIGH>;
++
++		sound-channel = <1>;
++		sound-name-prefix = "Amplifier R";
++
++		#sound-dai-cells = <1>;
++	};
+ };
+ 
+ &i2c9 {
+@@ -1350,6 +1373,43 @@ &remoteproc_wpss {
+ 	status = "okay";
+ };
+ 
++&sound {
++	compatible = "nothing,spacewar-sndcard",
++		     "motorola,dubai-sndcard";
++
++	model = "NP1";
++
++	pinctrl-0 = <&pri_mi2s_bck_active &pri_mi2s_din_active
++		     &pri_mi2s_dout_active &pri_mi2s_ws_active>;
++	pinctrl-1 = <&pri_mi2s_sleep>;
++	pinctrl-names = "default",
++			"sleep";
++
++	mm1-dai-link {
++		link-name = "MultiMedia1";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
++		};
++	};
++
++	i2s-dai-link {
++		link-name = "I2S Playback";
++
++		codec {
++			sound-dai = <&tfa9873_l 0>, <&tfa9873_r 0>;
++		};
++
++		cpu {
++			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++	};
++};
++
+ &spi13 {
+ 	status = "okay";
+ 
+@@ -1452,6 +1512,45 @@ hst_sw_ctrl: hst-sw-ctrl-state {
+ 		function = "gpio";
+ 		bias-pull-down;
+ 	};
++
++	pri_mi2s_bck_active: pri-mi2s-bck-active-state {
++		pins = "gpio97";
++		function = "mi2s0_sck";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_din_active: pri-mi2s-din-active-state {
++		pins = "gpio98";
++		function = "mi2s0_data0";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_dout_active: pri-mi2s-dout-active-state {
++		pins = "gpio99";
++		function = "mi2s0_data1";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_ws_active: pri-mi2s-ws-active-state {
++		pins = "gpio100";
++		function = "mi2s0_ws";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_sleep: pri-mi2s-sleep-state {
++		pins = "gpio97", "gpio98", "gpio99", "gpio100";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
+ };
+ 
+ &uart5 {
+-- 
+2.55.0
+

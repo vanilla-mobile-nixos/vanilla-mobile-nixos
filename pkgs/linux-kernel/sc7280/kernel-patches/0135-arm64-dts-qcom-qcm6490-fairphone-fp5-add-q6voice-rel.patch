@@ -1,0 +1,67 @@
+From 789a7d621405dd403aaaceb65a43de1d4a2b1de1 Mon Sep 17 00:00:00 2001
+From: Bhushan Shah <bhushan.shah@machinesoul.in>
+Date: Mon, 2 Feb 2026 19:10:45 +0530
+Subject: [PATCH 135/136] arm64: dts: qcom: qcm6490-fairphone-fp5: add q6voice
+ related nodes
+
+Signed-off-by: Bhushan Shah <bhushan.shah@machinesoul.in>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/qcm6490-fairphone-fp5.dts   | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 2bc8a4c96143..8583dae4d894 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -17,6 +17,7 @@
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include <dt-bindings/sound/qcom,q6asm.h>
+ #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
++#include <dt-bindings/sound/qcom,q6voice.h>
+ #include "kodiak.dtsi"
+ #include "pm7250b.dtsi" /* SID-8 & SID-9 */
+ #include "pm7325.dtsi"  /* SID-1 */
+@@ -1388,6 +1389,24 @@ &pon_resin {
+ 	status = "okay";
+ };
+ 
++&q6cvp {
++	status = "okay";
++};
++
++&q6cvs {
++	status = "okay";
++};
++
++&q6mvm {
++	status = "okay";
++};
++
++&q6voicedai {
++	dai@1 {
++		reg = <VOICEMMODE1>;
++	};
++};
++
+ &q6afedai {
+ 	dai@127 {
+ 		reg = <QUINARY_MI2S_RX>;
+@@ -1573,6 +1592,14 @@ platform {
+ 			sound-dai = <&q6routing>;
+ 		};
+ 	};
++
++	voicemmode1-dai-link {
++		link-name = "VoiceMMode1";
++
++		cpu {
++			sound-dai = <&q6voicedai VOICEMMODE1>;
++		};
++	};
+ };
+ 
+ &spi13 {
+-- 
+2.55.0
+

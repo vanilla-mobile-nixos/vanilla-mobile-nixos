@@ -1,0 +1,29 @@
+From 2ee47d3a61c80d4028b606c466d6aac39511b704 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 15 May 2026 09:52:45 +0200
+Subject: [PATCH 093/136] dt-bindings: vendor-prefixes: Add Nex Computer LLC
+
+Add Nex Computer LLC to the vendor prefixes.
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+index ba2002969373..8a6745e4e8a3 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -1192,6 +1192,8 @@ patternProperties:
+     description: New Vision Display (Shenzhen) Co., Ltd.
+   "^nexbox,.*":
+     description: Nexbox
++  "^nexcomputer,.*":
++    description: Nex Computer LLC
+   "^nextthing,.*":
+     description: Next Thing Co.
+   "^ni,.*":
+-- 
+2.55.0
+
