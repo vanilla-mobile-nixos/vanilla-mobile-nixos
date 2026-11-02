@@ -16,13 +16,13 @@
 }).overrideAttrs
   (
     finalAttrs: prevAttrs: rec {
-      version = "0.56.0";
+      version = "0.57.0";
 
       src = fetchFromGitHub {
         owner = "horriblename";
         repo = "hyprgrass";
         tag = "hl-${version}";
-        hash = "sha256-r0kKcEid5NcolUgfE7rI1TT3VAMxrnjqzGLIVs/lbI8=";
+        hash = "sha256-Z4la09NwLkQD9tui840xTOPVoF1UnOUWkvLHcfxGxvY=";
       };
     }
   )
