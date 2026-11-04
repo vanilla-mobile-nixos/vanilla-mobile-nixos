@@ -1,0 +1,183 @@
+From 52d6df55f00b8f767390a4c1b9cdb9b7f1f92db6 Mon Sep 17 00:00:00 2001
+From: David Heidelberg <david@ixit.cz>
+Date: Wed, 29 Jul 2026 22:20:00 +0200
+Subject: [PATCH 015/136] FROMLIST v9 media: qcom: camss: Initialize lanes
+ after lane configuration is available
+
+The lanes must not be initialized before the driver has access to
+the lane configuration, as it depends on whether D-PHY or C-PHY mode
+is in use. Move the lane initialization to csiphy_lanes_enable which is
+called when the configuration structures are available.
+
+Co-developed-by: Petr Hodina <phodina@protonmail.com>
+Signed-off-by: Petr Hodina <phodina@protonmail.com>
+Reviewed-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Acked-by: Cory Keitz <ckeitz@amazon.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: David Heidelberg <david@ixit.cz>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../qcom/camss/camss-csiphy-3ph-1-0.c         | 131 +++++++++++++-----
+ 1 file changed, 93 insertions(+), 38 deletions(-)
+
+diff --git a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
+index dfcd9ed2eb7a..5c07aa9d19c5 100644
+--- a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
++++ b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
+@@ -1168,6 +1168,98 @@ static void csiphy_lanes_enable(struct csiphy_device *csiphy,
+ 	u8 val;
+ 	int i;
+ 
++	switch (csiphy->camss->res->version) {
++	case CAMSS_845:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sdm845[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sdm845);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_2290:
++	case CAMSS_6150:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_qcm2290[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_qcm2290);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_6350:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sm6350[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sm6350);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_7280:
++	case CAMSS_8250:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sm8250[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sm8250);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_8280XP:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sc8280xp[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sc8280xp);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_X1E80100:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_x1e80100[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_x1e80100);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_8550:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sm8550[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sm8550);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_8650:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sm8650[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sm8650);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	case CAMSS_8300:
++	case CAMSS_8775P:
++		if (c->phy_cfg == V4L2_MBUS_CSI2_DPHY) {
++			regs->lane_regs = &lane_regs_sa8775p[0];
++			regs->lane_array_size = ARRAY_SIZE(lane_regs_sa8775p);
++		} else if (c->phy_cfg == V4L2_MBUS_CSI2_CPHY) {
++			regs->lane_regs = NULL;
++			regs->lane_array_size = 0;
++		}
++		break;
++	default:
++		break;
++	}
++
++	if (!regs->lane_regs)
++		WARN_ONCE(1, "Missing lane_regs definition!\n");
++
+ 	settle_cnt = csiphy_settle_cnt_calc(link_freq, csiphy->timer_clk_rate);
+ 
+ 	val = csiphy_get_lane_mask(c);
+@@ -1220,53 +1312,16 @@ static int csiphy_init(struct csiphy_device *csiphy)
+ 		return -ENOMEM;
+ 
+ 	csiphy->regs = regs;
+-	regs->offset = 0x800;
+ 	regs->common_status_offset = 0xb0;
+ 
+ 	switch (csiphy->camss->res->version) {
+-	case CAMSS_845:
+-		regs->lane_regs = &lane_regs_sdm845[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sdm845);
+-		break;
+-	case CAMSS_2290:
+-	case CAMSS_6150:
+-		regs->lane_regs = &lane_regs_qcm2290[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_qcm2290);
+-		break;
+-	case CAMSS_6350:
+-		regs->lane_regs = &lane_regs_sm6350[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sm6350);
+-		break;
+-	case CAMSS_7280:
+-	case CAMSS_8250:
+-		regs->lane_regs = &lane_regs_sm8250[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sm8250);
+-		break;
+-	case CAMSS_8280XP:
+-		regs->lane_regs = &lane_regs_sc8280xp[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sc8280xp);
+-		break;
+ 	case CAMSS_X1E80100:
+-		regs->lane_regs = &lane_regs_x1e80100[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_x1e80100);
+-		regs->offset = 0x1000;
+-		break;
+ 	case CAMSS_8550:
+-		regs->lane_regs = &lane_regs_sm8550[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sm8550);
+-		regs->offset = 0x1000;
+-		break;
+ 	case CAMSS_8650:
+-		regs->lane_regs = &lane_regs_sm8650[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sm8650);
+ 		regs->offset = 0x1000;
+ 		break;
+-	case CAMSS_8300:
+-	case CAMSS_8775P:
+-		regs->lane_regs = &lane_regs_sa8775p[0];
+-		regs->lane_array_size = ARRAY_SIZE(lane_regs_sa8775p);
+-		break;
+ 	default:
++		regs->offset = 0x800;
+ 		break;
+ 	}
+ 
+-- 
+2.55.0
+

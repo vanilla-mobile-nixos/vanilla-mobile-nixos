@@ -1,0 +1,156 @@
+From c4ab1891d50ca14e2ef79e63be7a6ec71ff71569 Mon Sep 17 00:00:00 2001
+From: Stanislav Zaikin <zstaseg@gmail.com>
+Date: Thu, 18 Sep 2025 09:47:11 +0200
+Subject: [PATCH 077/136] arm64: dts: qcom: sm7325-xiaomi-taoyao: Add Mi2s
+ sound support
+
+Signed-off-by: Stanislav Zaikin <zstaseg@gmail.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-xiaomi-taoyao.dts    | 109 ++++++++++++++++++
+ 1 file changed, 109 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts b/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts
+index d5b37209bb54..5b9572422c7c 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-xiaomi-taoyao.dts
+@@ -634,6 +634,32 @@ fsa4480_sbu_mux: endpoint {
+ 	};
+ };
+ 
++&i2c3 {
++	clock-frequency = <100000>;
++
++	status = "okay";
++
++	tfa9873_l: codec@34 { /* Top Speaker */
++		compatible = "nxp,tfa9873",
++			     "nxp,tfa9872";
++		reg = <0x34>;
++		reset-gpio = <&tlmm 2 GPIO_ACTIVE_HIGH>;
++		sound-name-prefix = "Speaker Left";
++		#sound-dai-cells = <1>;
++		sound-channel = <0>;
++	};
++
++	tfa9873_r: codec@35 { /* Bottom Speaker */
++		compatible = "nxp,tfa9873",
++			     "nxp,tfa9872";
++		reg = <0x35>;
++		reset-gpio = <&tlmm 6 GPIO_ACTIVE_HIGH>;
++		sound-name-prefix = "Speaker Right";
++		#sound-dai-cells = <1>;
++		sound-channel = <1>;
++	};
++};
++
+ &ipa {
+ 	firmware-name = "qcom/sm7325/xiaomi/taoyao/ipa_fws.mbn";
+ 
+@@ -711,6 +737,13 @@ &pon_resin {
+ 	status = "okay";
+ };
+ 
++&q6afedai {
++	dai@16 {
++		reg = <PRIMARY_MI2S_RX>;
++		qcom,sd-lines = <1>;
++	};
++};
++
+ &qup_spi13_cs {
+ 	drive-strength = <6>;
+ 	bias-disable;
+@@ -753,6 +786,43 @@ &remoteproc_wpss {
+ 	status = "okay";
+ };
+ 
++&sound {
++	compatible = "xiaomi,taoyao-sndcard",
++		     "motorola,dubai-sndcard";
++
++	model = "taoyao";
++
++	pinctrl-0 = <&pri_mi2s_bck_active &pri_mi2s_din_active
++		     &pri_mi2s_dout_active &pri_mi2s_ws_active>;
++	pinctrl-1 = <&pri_mi2s_sleep>;
++	pinctrl-names = "default",
++			"sleep";
++
++	mm1-dai-link {
++		link-name = "MultiMedia1";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
++		};
++	};
++
++	i2s-dai-link {
++		link-name = "I2S Playback";
++
++		codec {
++			sound-dai = <&tfa9873_l 0>, <&tfa9873_r 0>;
++		};
++
++		cpu {
++			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++	};
++};
++
+ &spi13 {
+ 	status = "okay";
+ 
+@@ -848,6 +918,45 @@ hst_sw_ctrl: hst-sw-ctrl-state {
+ 		bias-pull-down;
+ 	};
+ 
++	pri_mi2s_bck_active: pri-mi2s-bck-active-state {
++		pins = "gpio97";
++		function = "mi2s0_sck";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_din_active: pri-mi2s-din-active-state {
++		pins = "gpio98";
++		function = "mi2s0_data0";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_dout_active: pri-mi2s-dout-active-state {
++		pins = "gpio99";
++		function = "mi2s0_data1";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_ws_active: pri-mi2s-ws-active-state {
++		pins = "gpio100";
++		function = "mi2s0_ws";
++		drive-strength = <8>;
++		bias-disable;
++		output-high;
++	};
++
++	pri_mi2s_sleep: pri-mi2s-sleep-state {
++		pins = "gpio97", "gpio98", "gpio99", "gpio100";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++	};
++
+ 	ts_reset: ts-reset-state {
+ 		pins = "gpio105";
+ 		function = "gpio";
+-- 
+2.55.0
+

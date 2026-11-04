@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Marcus Ramberg <marcus@means.no>
+Date: Sun, 25 Oct 2026 17:53:22 +0100
+Subject: [PATCH 01/20] drm/msm/dsi: skip link clock cycling on FP5
+
+Fixes glitches on brightness change.
+https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/4274
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/gpu/drm/msm/dsi/dsi_host.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
+index b292dfd266d1..f6d2346c9847 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -2179,8 +2179,18 @@ int msm_dsi_host_xfer_prepare(struct mipi_dsi_host *host,
+ 	 * mdp clock need to be enabled to receive dsi interrupt
+ 	 */
+ 	pm_runtime_get_sync(&msm_host->pdev->dev);
+-	cfg_hnd->ops->link_clk_set_rate(msm_host);
+-	cfg_hnd->ops->link_clk_enable(msm_host);
++
++	/*
++	 * Skip link clock enable/set_rate when the display is already active.
++	 * The link clocks are owned by host_power_on()/host_power_off() for
++	 * the duration of the display session. Re-cycling them here while the
++	 * MDP frame pipeline is running cuts the byte/pixel clock supply to
++	 * the DSI serializer mid-frame, causing all-lane HS FIFO underflows.
++	 */
++	if (!(msm_host->power_on && msm_host->enabled)) {
++		cfg_hnd->ops->link_clk_set_rate(msm_host);
++		cfg_hnd->ops->link_clk_enable(msm_host);
++	}
+ 
+ 	/* TODO: vote for bus bandwidth */
+ 
+@@ -2211,7 +2221,13 @@ void msm_dsi_host_xfer_restore(struct mipi_dsi_host *host,
+ 
+ 	/* TODO: unvote for bus bandwidth */
+ 
+-	cfg_hnd->ops->link_clk_disable(msm_host);
++	/*
++	 * Only disable link clocks if the display was not already active when
++	 * xfer_prepare() ran. Matches the conditional enable above.
++	 */
++	if (!(msm_host->power_on && msm_host->enabled))
++		cfg_hnd->ops->link_clk_disable(msm_host);
++
+ 	pm_runtime_put(&msm_host->pdev->dev);
+ }
+ 

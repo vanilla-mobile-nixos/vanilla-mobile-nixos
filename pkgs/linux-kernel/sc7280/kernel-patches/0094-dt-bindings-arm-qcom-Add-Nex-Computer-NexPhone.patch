@@ -1,0 +1,29 @@
+From 54974a3ed89b1e7c347575884927c1fb4f93e162 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 15 May 2026 09:53:40 +0200
+Subject: [PATCH 094/136] dt-bindings: arm: qcom: Add Nex Computer NexPhone
+
+NexPhone (nexcomputer,nexphone) is a smartphone based on the QCM6490
+SoC.
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index 5048e878b7ca..85ce4432dc7a 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -413,6 +413,7 @@ properties:
+       - items:
+           - enum:
+               - fairphone,fp5
++              - nexcomputer,nexphone
+               - particle,tachyon
+               - qcom,qcm6490-idp
+               - qcom,qcs6490-rb3gen2
+-- 
+2.55.0
+

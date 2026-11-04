@@ -1,0 +1,205 @@
+From 203c2cabce9879ece3be01df53421573984e1ed8 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 22 May 2026 16:46:21 +0200
+Subject: [PATCH 029/136] FROMLIST v1 arm64: dts: qcom: kodiak: Elite-ify LPASS
+ macros
+
+Due to initial kodiak/sc7280 bringup being done for Chrome platforms,
+some Chrome-specific bits still remain in kodiak.dtsi, like the clocks
+and power-domains for the LPASS RX/TX/WSA/VA macros.
+
+Move them to sc7280-chrome-common.dtsi and put Elite (q6afecc)
+equivalents in its place. The qcs6490-audioreach.dtsi file can also drop
+deletion of power-domains properties then.
+
+This follows previous commits moving Chrome-specific configuration to
+the correct file, leaving kodiak.dtsi for Elite and
+qcs6490-audioreach.dtsi for AudioReach.
+
+No functional change intended. The clock-output-names property will now
+exist for both Chrome and AudioReach devices but this shouldn't have any
+relevant effect. And WSA macro clocks weren't added to Chrome because I
+don't believe this would've ever worked given it already referenced
+q6afecc and the nodes were originally added during AudioReach bringup.
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/kodiak.dtsi          | 48 +++++++++++--------
+ .../boot/dts/qcom/qcs6490-audioreach.dtsi     |  6 ---
+ .../boot/dts/qcom/sc7280-chrome-common.dtsi   | 38 +++++++++++++++
+ 3 files changed, 67 insertions(+), 25 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index 49e7b799c207..990d851177dd 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -2690,14 +2690,18 @@ lpass_rx_macro: codec@3200000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&lpass_rx_swr_clk>, <&lpass_rx_swr_data>;
+ 
+-			clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>,
+-				 <&lpass_aon LPASS_AON_CC_TX_MCLK_2X_CLK>,
++			clocks = <&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 				 <&lpass_va_macro>;
+-			clock-names = "mclk", "npl", "fsgen";
++			clock-names = "mclk",
++				      "npl",
++				      "macro",
++				      "dcodec",
++				      "fsgen";
+ 
+-			power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
+-					<&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
+-			power-domain-names = "macro", "dcodec";
++			clock-output-names = "mclk";
+ 
+ 			#clock-cells = <0>;
+ 			#sound-dai-cells = <1>;
+@@ -2743,14 +2747,18 @@ lpass_tx_macro: codec@3220000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&lpass_tx_swr_clk>, <&lpass_tx_swr_data>;
+ 
+-			clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>,
+-				 <&lpass_aon LPASS_AON_CC_TX_MCLK_2X_CLK>,
++			clocks = <&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 				 <&lpass_va_macro>;
+-			clock-names = "mclk", "npl", "fsgen";
++			clock-names = "mclk",
++				      "npl",
++				      "macro",
++				      "dcodec",
++				      "fsgen";
+ 
+-			power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
+-					<&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
+-			power-domain-names = "macro", "dcodec";
++			clock-output-names = "mclk";
+ 
+ 			#clock-cells = <0>;
+ 			#sound-dai-cells = <1>;
+@@ -2794,8 +2802,8 @@ lpass_wsa_macro: codec@3240000 {
+ 			compatible = "qcom,sc7280-lpass-wsa-macro";
+ 			reg = <0x0 0x03240000 0x0 0x1000>;
+ 
+-			clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>,
+-				 <&lpass_aon LPASS_AON_CC_TX_MCLK_2X_CLK>,
++			clocks = <&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 				 <&lpass_va_macro>;
+@@ -2867,12 +2875,14 @@ lpass_va_macro: codec@3370000 {
+ 			compatible = "qcom,sc7280-lpass-va-macro";
+ 			reg = <0 0x03370000 0 0x1000>;
+ 
+-			clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>;
+-			clock-names = "mclk";
++			clocks = <&q6afecc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++				 <&q6afecc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++			clock-names = "mclk",
++				      "macro",
++				      "dcodec";
+ 
+-			power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
+-					<&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
+-			power-domain-names = "macro", "dcodec";
++			clock-output-names = "fsgen";
+ 
+ 			#clock-cells = <0>;
+ 			#sound-dai-cells = <1>;
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-audioreach.dtsi b/arch/arm64/boot/dts/qcom/qcs6490-audioreach.dtsi
+index c1867711298b..037a5f6c030a 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-audioreach.dtsi
++++ b/arch/arm64/boot/dts/qcom/qcs6490-audioreach.dtsi
+@@ -11,8 +11,6 @@
+ #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
+ 
+ &lpass_rx_macro {
+-	/delete-property/ power-domains;
+-	/delete-property/ power-domain-names;
+ 	clocks = <&q6prmcc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 		 <&q6prmcc LPASS_CLK_ID_TX_CORE_NPL_MCLK  LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+@@ -33,8 +31,6 @@ &lpass_tlmm {
+ };
+ 
+ &lpass_tx_macro {
+-	/delete-property/ power-domains;
+-	/delete-property/ power-domain-names;
+ 	clocks = <&q6prmcc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 		 <&q6prmcc LPASS_CLK_ID_TX_CORE_NPL_MCLK  LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+@@ -48,8 +44,6 @@ &lpass_tx_macro {
+ };
+ 
+ &lpass_va_macro {
+-	/delete-property/ power-domains;
+-	/delete-property/ power-domain-names;
+ 	clocks = <&q6prmcc LPASS_CLK_ID_VA_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
+ 		 <&q6prmcc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
+diff --git a/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi b/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi
+index debf62baec9b..5b25501484fa 100644
+--- a/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi
+@@ -67,11 +67,49 @@ &lpass_hm {
+ 	status = "okay";
+ };
+ 
++&lpass_rx_macro {
++	power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
++			<&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
++	power-domain-names = "macro",
++			     "dcodec";
++
++	clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>,
++		 <&lpass_aon LPASS_AON_CC_TX_MCLK_2X_CLK>,
++		 <&lpass_va_macro>;
++	clock-names = "mclk",
++		      "npl",
++		      "fsgen";
++};
++
+ &lpass_tlmm {
+ 	/delete-property/ clocks;
+ 	/delete-property/ clock-names;
+ };
+ 
++&lpass_tx_macro {
++	clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>,
++		 <&lpass_aon LPASS_AON_CC_TX_MCLK_2X_CLK>,
++		 <&lpass_va_macro>;
++	clock-names = "mclk",
++		      "npl",
++		      "fsgen";
++
++	power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
++			<&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
++	power-domain-names = "macro",
++			     "dcodec";
++};
++
++&lpass_va_macro {
++	clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>;
++	clock-names = "mclk";
++
++	power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
++			<&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
++	power-domain-names = "macro",
++			     "dcodec";
++};
++
+ &lpasscc {
+ 	status = "okay";
+ };
+-- 
+2.55.0
+

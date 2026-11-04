@@ -1,0 +1,74 @@
+From 04e9b3459fa752d401738cfea1340b22fee21414 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Mon, 18 Nov 2024 20:46:45 +0100
+Subject: [PATCH 049/136] arm64: dts: qcom: qcm6490-fairphone-fp5: Add rear
+ camera support
+
+Add the necessary nodes to enable the rear camera (Sony IMX800).
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/qcm6490-fairphone-fp5.dts   | 39 ++++++++++++++++++-
+ 1 file changed, 38 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 3e59738fb5e5..37f170bbc69f 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -688,6 +688,14 @@ &camss {
+ 	status = "okay";
+ 
+ 	ports {
++		port@0 {
++			csiphy0_ep: endpoint {
++				data-lanes = <0 1 2>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_CPHY>;
++				remote-endpoint = <&camera_imx800_ep>;
++			};
++		};
++
+ 		port@1 {
+ 			csiphy1_ep: endpoint {
+ 				clock-lanes = <7>;
+@@ -713,7 +721,36 @@ &cci0 {
+ 
+ &cci0_i2c0 {
+ 	/* actuator@c (asahi-kasei,ak7377) */
+-	/* camera@1a (sony,imx800) */
++
++	camera@1a {
++		compatible = "sony,imx800";
++		reg = <0x1a>;
++
++		vana1-supply = <&vreg_l5p>;
++		vana2-supply = <&vreg_ois_avdd0_1p8>;
++		vif-supply = <&vreg_l6p>;
++		vdig-supply = <&vreg_ois_dvdd_1p1>;
++
++		clocks = <&camcc CAM_CC_MCLK0_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK0_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		reset-gpios = <&tlmm 20 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&cam_mclk0_default>;
++		pinctrl-names = "default";
++
++		orientation = <1>; /* Rear facing */
++		rotation = <270>;
++
++		port {
++			camera_imx800_ep: endpoint {
++				data-lanes = <1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_CPHY>;
++				link-frequencies = /bits/ 64 <130000000>;
++				remote-endpoint = <&csiphy0_ep>;
++			};
++		};
++	};
+ 
+ 	eeprom@50 {
+ 		compatible = "puya,p24c256c", "atmel,24c256";
+-- 
+2.55.0
+

@@ -1,0 +1,59 @@
+From 61fcf2a81d39cd62e90c89f382201cd0c24f5f3d Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca@lucaweiss.eu>
+Date: Mon, 11 Aug 2025 18:20:39 +0200
+Subject: [PATCH 072/136] arm64: dts: qcom: qcm6490-shift-otter: Add 'Custom'
+ button
+
+On the left side of the phone is a button, marketed as 'Custom key'.
+Describe it in the devicetree.
+
+Signed-off-by: Luca Weiss <luca@lucaweiss.eu>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts b/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts
+index 6b49a3734f29..754ead31f6f9 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-shift-otter.dts
+@@ -53,7 +53,7 @@ framebuffer {
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 
+-		pinctrl-0 = <&volume_down_default>;
++		pinctrl-0 = <&volume_down_default>, <&gpio_custom_key_default>;
+ 		pinctrl-names = "default";
+ 
+ 		key-volume-up {
+@@ -62,6 +62,13 @@ key-volume-up {
+ 			linux,code = <KEY_VOLUMEUP>;
+ 			debounce-interval = <15>;
+ 		};
++
++		key-custom {
++			label = "Custom Key";
++			gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_MISC>;
++			debounce-interval = <15>;
++		};
+ 	};
+ 
+ 	pmic-glink {
+@@ -913,6 +920,13 @@ disp_reset_n_suspend: disp-reset-n-suspend-state {
+ 		bias-pull-down;
+ 	};
+ 
++	gpio_custom_key_default: gpio-custom-key-default-state {
++		pins = "gpio75";
++		function = "gpio";
++		drive_strength = <2>;
++		bias-pull-up;
++	};
++
+ 	mdp_vsync: mdp-vsync-state {
+ 		pins = "gpio80";
+ 		function = "mdp_vsync";
+-- 
+2.55.0
+

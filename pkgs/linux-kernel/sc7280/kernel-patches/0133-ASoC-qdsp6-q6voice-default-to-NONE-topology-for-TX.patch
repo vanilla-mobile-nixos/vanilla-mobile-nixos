@@ -1,0 +1,37 @@
+From a01901e96bd2230b98bb3cfc0ad4cf8ba085d35a Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Mon, 20 Apr 2026 15:54:45 -0300
+Subject: [PATCH 133/136] ASoC: qdsp6: q6voice: default to NONE topology for TX
+
+On kodiak + wcd9375, only this topology seems to work so far for the mic.
+
+Signed-off-by: Val Packett <val@packett.cool>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/qcom/qdsp6/q6voice.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/qcom/qdsp6/q6voice.c b/sound/soc/qcom/qdsp6/q6voice.c
+index 461a5eceb3cf..bb27cb7c0d0b 100644
+--- a/sound/soc/qcom/qdsp6/q6voice.c
++++ b/sound/soc/qcom/qdsp6/q6voice.c
+@@ -13,6 +13,7 @@
+ #include "q6mvm.h"
+ #include "q6voice-common.h"
+ 
++#define VSS_IVOCPROC_TOPOLOGY_ID_NONE		0x00010F70
+ #define VSS_IVOCPROC_TOPOLOGY_ID_TX_SM_ECNS		0x00010F71
+ #define VSS_IVOCPROC_TOPOLOGY_ID_RX_DEFAULT		0x00010F77
+ 
+@@ -267,7 +268,7 @@ struct q6voice *q6voice_create(struct device *dev, bool cvd_v2_3)
+ 
+ 		p->v = v;
+ 		p->type = path;
+-		p->tx_topo = VSS_IVOCPROC_TOPOLOGY_ID_TX_SM_ECNS;
++		p->tx_topo = VSS_IVOCPROC_TOPOLOGY_ID_NONE;
+ 		p->rx_topo = VSS_IVOCPROC_TOPOLOGY_ID_RX_DEFAULT;
+ 		mutex_init(&p->lock);
+ 	}
+-- 
+2.55.0
+

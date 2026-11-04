@@ -1,0 +1,59 @@
+From 343144444f01d5a1d192454fc02a88815961cd6f Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Fri, 24 Apr 2026 20:49:51 -0300
+Subject: [PATCH 099/136] FROMLIST v1 drm/bridge: panel: call the new atomic
+ panel ops
+
+As the panel API now includes atomic versions of the power ops, call the
+new atomic wrappers in order to allow panel drivers to access CRTC state
+like the mode being set.
+
+Signed-off-by: Val Packett <val@packett.cool>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/gpu/drm/bridge/panel.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/panel.c b/drivers/gpu/drm/bridge/panel.c
+index 02388a3de626..3ce46b287ffa 100644
+--- a/drivers/gpu/drm/bridge/panel.c
++++ b/drivers/gpu/drm/bridge/panel.c
+@@ -126,7 +126,7 @@ static void panel_bridge_atomic_pre_enable(struct drm_bridge *bridge,
+ 	if (old_crtc_state && old_crtc_state->self_refresh_active)
+ 		return;
+ 
+-	drm_panel_prepare(panel_bridge->panel);
++	drm_panel_atomic_prepare(panel_bridge->panel, crtc, atomic_state);
+ }
+ 
+ static void panel_bridge_atomic_enable(struct drm_bridge *bridge,
+@@ -145,7 +145,7 @@ static void panel_bridge_atomic_enable(struct drm_bridge *bridge,
+ 	if (old_crtc_state && old_crtc_state->self_refresh_active)
+ 		return;
+ 
+-	drm_panel_enable(panel_bridge->panel);
++	drm_panel_atomic_enable(panel_bridge->panel, crtc, atomic_state);
+ }
+ 
+ static void panel_bridge_atomic_disable(struct drm_bridge *bridge,
+@@ -164,7 +164,7 @@ static void panel_bridge_atomic_disable(struct drm_bridge *bridge,
+ 	if (new_crtc_state && new_crtc_state->self_refresh_active)
+ 		return;
+ 
+-	drm_panel_disable(panel_bridge->panel);
++	drm_panel_atomic_disable(panel_bridge->panel, crtc, atomic_state);
+ }
+ 
+ static void panel_bridge_atomic_post_disable(struct drm_bridge *bridge,
+@@ -183,7 +183,7 @@ static void panel_bridge_atomic_post_disable(struct drm_bridge *bridge,
+ 	if (new_crtc_state && new_crtc_state->self_refresh_active)
+ 		return;
+ 
+-	drm_panel_unprepare(panel_bridge->panel);
++	drm_panel_atomic_unprepare(panel_bridge->panel, crtc, atomic_state);
+ }
+ 
+ static int panel_bridge_get_modes(struct drm_bridge *bridge,
+-- 
+2.55.0
+

@@ -1,0 +1,1220 @@
+From 3e7031a7f2f6a1928ebb9224f48a3f20050097ae Mon Sep 17 00:00:00 2001
+From: Lona Lit <artlav@mm.st>
+Date: Tue, 2 Jun 2026 18:50:02 +0200
+Subject: [PATCH 107/136] drivers: media: i2c: Initial Galaxycore GC02M1B
+ support
+
+Tested on Motorola Edge 30 (motorola-dubai)
+Signed-off-by: Lona Lit <artlav@mm.st>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/media/i2c/Makefile  |    1 +
+ drivers/media/i2c/gc02m1b.c | 1184 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 1185 insertions(+)
+ create mode 100644 drivers/media/i2c/gc02m1b.c
+
+diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
+index 91c33b4c17ac..c93594e3a905 100644
+--- a/drivers/media/i2c/Makefile
++++ b/drivers/media/i2c/Makefile
+@@ -37,6 +37,7 @@ obj-$(CONFIG_VIDEO_DW9719) += dw9719.o
+ obj-$(CONFIG_VIDEO_DW9768) += dw9768.o
+ obj-$(CONFIG_VIDEO_DW9807_VCM) += dw9807-vcm.o
+ obj-$(CONFIG_VIDEO_ET8EK8) += et8ek8/
++obj-m += gc02m1b.o
+ obj-$(CONFIG_VIDEO_GC0308) += gc0308.o
+ obj-$(CONFIG_VIDEO_GC0310) += gc0310.o
+ obj-$(CONFIG_VIDEO_GC05A2) += gc05a2.o
+diff --git a/drivers/media/i2c/gc02m1b.c b/drivers/media/i2c/gc02m1b.c
+new file mode 100644
+index 000000000000..fd66533ddc3b
+--- /dev/null
++++ b/drivers/media/i2c/gc02m1b.c
+@@ -0,0 +1,1184 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * A V4L2 driver for Galaxycore GC02M1B.
++ * Monochrome 2MP, 1/5", 1.75um, 30FPS, D-PHY CIS.
++ * Should be relatively easy to adapt to GC02M1.
++ * Tested on Motorola Edge 30 (motorola-dubai).
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
++#include <linux/module.h>
++#include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
++#include <linux/units.h>
++
++#include <media/mipi-csi2.h>
++#include <media/v4l2-cci.h>
++#include <media/v4l2-ctrls.h>
++#include <media/v4l2-device.h>
++#include <media/v4l2-fwnode.h>
++#include <media/v4l2-mediabus.h>
++
++#define GC02M1B_CHIP_ID		0x02E0
++
++/* Registers that it was possible to identify */
++
++/* Common RO */
++#define GC02M1B_REG_CHIP_ID	CCI_REG16(0xf0)
++#define GC02M1B_REG_CHIP_VERSION	CCI_REG8(0xf2)
++#define GC02M1B_REG_I2C_DEV_ID	CCI_REG8(0xfb)
++
++/* Common RW */
++#define GC02M1B_REG_OTP_CLK_ENA	CCI_REG8(0xf3)
++#define GC02M1B_REG_GROUP_HOLD	CCI_REG8(0xf4)
++#define GC02M1B_REG_PLL_LDO_SET	CCI_REG8(0xf5)
++#define GC02M1B_REG_PLL_MODE2	CCI_REG8(0xf8)
++#define GC02M1B_REG_ANALOG_PWD	CCI_REG8(0xf9)
++#define GC02M1B_REG_PLL_ENABLE	CCI_REG8(0xfc)
++#define GC02M1B_PLL_ENABLE	BIT(0)
++#define GC02M1B_REG_PAGE_SELECT	CCI_REG8(0xfe)
++#define GC02M1B_CISCTL_RESET	BIT(4)
++#define GC02M1B_MIPI_RESET	BIT(5)
++#define GC02M1B_CM_RESET	BIT(6)
++#define GC02M1B_SOFT_RESET	BIT(7)
++
++/* Page 0 */
++#define GC02M1B_REG_EXPOSURE	CCI_REG16(0x03)
++#define GC02M1B_REG_LINE_LENGTH	CCI_REG16(0x05)
++#define GC02M1B_REG_VBLANK	CCI_REG16(0x07)
++#define GC02M1B_REG_ROW_START	CCI_REG16(0x09)
++#define GC02M1B_REG_COL_START	CCI_REG16(0x0b)
++#define GC02M1B_REG_WIN_HEIGHT	CCI_REG16(0x0d)
++#define GC02M1B_REG_WIN_WIDTH	CCI_REG16(0x0f)
++#define GC02M1B_REG_FLIP	CCI_REG8(0x17)
++#define GC02M1B_FLIP_HORIZONTAL	BIT(0)
++#define GC02M1B_FLIP_VERTICAL	BIT(1)
++#define GC02M1B_FLIP_UNKNOWN	BIT(7)
++#define GC02M1B_REG_OUTPUT	CCI_REG8(0x3e)
++#define GC02M1B_REG_FRAME_LENGTH	CCI_REG16(0x41)
++#define GC02M1B_REG_FSYNC_MODE	CCI_REG16(0x7f)
++#define GC02M1B_REG_FSYNC_MODE_NEW3	CCI_REG16(0x83)
++#define GC02M1B_REG_FSYNC_MODE_NEW4	CCI_REG16(0x85)
++#define GC02M1B_REG_GAIN_VALUE	CCI_REG16(0xb1)
++#define GC02M1B_REG_GAIN_STEP	CCI_REG8(0xb6)
++
++/* Page 1 */
++#define GC02M1B_REG_OFFSET_LVL	CCI_REG8(0x60)
++#define GC02M1B_REG_DEBUG_MODE	CCI_REG8(0x8c)
++#define GC02M1B_DBG_TEST_PATTERN_ENABLE	BIT(0)
++#define GC02M1B_DBG_BASE	BIT(4)
++#define GC02M1B_REG_CROP_ENABLE	CCI_REG8(0x90)
++#define GC02M1B_REG_CROP_Y	CCI_REG16(0x91)
++#define GC02M1B_REG_CROP_X	CCI_REG16(0x93)
++#define GC02M1B_REG_CROP_HEIGHT	CCI_REG16(0x95)
++#define GC02M1B_REG_CROP_WIDTH	CCI_REG16(0x97)
++#define GC02M1B_REG_MIN_VBLANK	CCI_REG8(0x9d)
++
++/* Page 2 */
++#define GC02M1B_REG_OTP_ADDR	CCI_REG8(0x17)
++#define GC02M1B_REG_OTP_WRITE	CCI_REG8(0x18)
++#define GC02M1B_REG_OTP_READ	CCI_REG8(0x19)
++#define GC02M1B_REG_STROBE_REQ	CCI_REG8(0x84)
++#define GC02M1B_REG_STROBE_MODE2	CCI_REG8(0x85)
++#define GC02M1B_REG_STROBE_EXP_TH	CCI_REG16(0x86)
++#define GC02M1B_REG_STROBE_LASTS_TH	CCI_REG16(0x88)
++#define GC02M1B_REG_STROBE_SEL	CCI_REG8(0x8a)
++#define GC02M1B_REG_STROBE_PRE_EXP_NUM	CCI_REG8(0x8c)
++
++/* Page 3 */
++#define GC02M1B_REG_DPHY_ENABLE	CCI_REG8(0x01)
++#define GC02M1B_PHY_CLK_EN	BIT(0)
++#define GC02M1B_PHY_LANE0_EN	BIT(1)
++#define GC02M1B_REG_MIPI_DIFF	CCI_REG8(0x02)
++#define GC02M1B_REG_LANE_MODE	CCI_REG8(0x03)
++#define GC02M1B_MIPI_EN		BIT(2)
++#define GC02M1B_CLK_DELAY1S	BIT(3)
++#define GC02M1B_DATA0_DELAY1S	BIT(4)
++#define GC02M1B_CLKLANE_P2P_SEL	BIT(7)
++#define GC02M1B_REG_LDI_SET	CCI_REG8(0x11)
++#define GC02M1B_REG_LWC_SET	CCI_REG16(0x12)
++#define GC02M1B_REG_SYNC_SET	CCI_REG8(0x14)
++#define GC02M1B_REG_CLK_LANE_MODE	CCI_REG8(0x15)
++#define GC02M1B_REG_INIT_SET	CCI_REG8(0x20)
++#define GC02M1B_REG_LPX		CCI_REG8(0x21)
++#define GC02M1B_REG_CLK_HS_PREP	CCI_REG8(0x22)
++#define GC02M1B_REG_CLK_ZERO	CCI_REG8(0x23)
++#define GC02M1B_REG_CLK_PRE	CCI_REG8(0x24)
++#define GC02M1B_REG_CLK_POST	CCI_REG8(0x25)
++#define GC02M1B_REG_CLK_TRAIL	CCI_REG8(0x26)
++#define GC02M1B_REG_HS_EXIT	CCI_REG8(0x27)
++#define GC02M1B_REG_HS_PREP	CCI_REG8(0x29)
++#define GC02M1B_REG_HS_ZERO	CCI_REG8(0x2a)
++#define GC02M1B_REG_HS_TRAIL	CCI_REG8(0x2b)
++
++/* External clock frequency is 24 MHz */
++#define GC02M1B_XCLK_FREQ	(24 * HZ_PER_MHZ)
++
++#define GC02M1B_NATIVE_WIDTH	1612U
++#define GC02M1B_NATIVE_HEIGHT	1212U
++
++#define GC02M1B_FRAME_LENGTH_DEFAULT	1268
++#define GC02M1B_MIN_VBLANK		24
++
++#define GC02M1B_1600_1200_PIXELRATE	67200000
++#define GC02M1B_1600_1200_LINKFREQ	288000000
++/* The typical line length is 1096 (MCLK=24MHz) */
++/* and it is not recommended to be modified */
++#define GC02M1B_1600_1200_HBLANK	1096
++#define GC02M1B_1600_1200_VBLANK	GC02M1B_MIN_VBLANK
++
++#define GC02M1B_AGAIN_MIN		1024
++#define GC02M1B_AGAIN_MAX		12288
++#define GC02M1B_AGAIN_STEP		1
++#define GC02M1B_AGAIN_DEFAULT		1024
++
++#define GC02M1B_EXPOSURE_MIN		3
++#define GC02M1B_EXPOSURE_MAX		0x3FFF
++#define GC02M1B_EXPOSURE_STEP		1
++#define GC02M1B_EXPOSURE_DEFAULT	1149
++
++#define GC02M1B_NUM_GAIN_STEPS 16
++u16 GC02M1B_AGC_PARAM[GC02M1B_NUM_GAIN_STEPS][2] = {
++	{  1024,  0 },
++	{  1536,  1 },
++	{  2035,  2 },
++	{  2519,  3 },
++	{  3165,  4 },
++	{  3626,  5 },
++	{  4147,  6 },
++	{  4593,  7 },
++	{  5095,  8 },
++	{  5697,  9 },
++	{  6270, 10 },
++	{  6714, 11 },
++	{  7210, 12 },
++	{  7686, 13 },
++	{  8214, 14 },
++	{ 10337, 15 },
++};
++
++static const struct cci_reg_sequence gc02m1b_common_regs[] = {
++	/* System */
++	{GC02M1B_REG_PLL_ENABLE, 0x01},
++	{GC02M1B_REG_GROUP_HOLD, 0x41},
++	{GC02M1B_REG_PLL_LDO_SET, 0xc0},
++	{CCI_REG8(0xf6), 0x44},
++	{GC02M1B_REG_PLL_MODE2, 0x38},
++	{GC02M1B_REG_ANALOG_PWD, 0x82},
++	{CCI_REG8(0xfa), 0x00},
++	{CCI_REG8(0xfd), 0x80},
++	{GC02M1B_REG_PLL_ENABLE, 0x81},
++	{GC02M1B_REG_PAGE_SELECT, 0x03},
++	{GC02M1B_REG_DPHY_ENABLE, 0x08 |
++				  GC02M1B_PHY_CLK_EN |
++				  GC02M1B_PHY_LANE0_EN
++				},
++	{CCI_REG8(0xf7), 0x01},
++	{GC02M1B_REG_PLL_ENABLE, 0x80},
++	{GC02M1B_REG_PLL_ENABLE, 0x80},
++	{GC02M1B_REG_PLL_ENABLE, 0x80},
++	{GC02M1B_REG_PLL_ENABLE, 0x8e},
++	/* CISCTL */
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{CCI_REG8(0x87), 0x09},
++	{CCI_REG8(0xee), 0x72},
++	{GC02M1B_REG_PAGE_SELECT, 0x01},
++	{GC02M1B_REG_DEBUG_MODE, 0x90},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{CCI_REG8(0x90), 0x00},
++	{GC02M1B_REG_EXPOSURE, GC02M1B_EXPOSURE_DEFAULT},
++	{GC02M1B_REG_FRAME_LENGTH, GC02M1B_FRAME_LENGTH_DEFAULT},
++	{GC02M1B_REG_LINE_LENGTH, GC02M1B_1600_1200_HBLANK},
++	{GC02M1B_REG_VBLANK, GC02M1B_1600_1200_VBLANK},
++	{GC02M1B_REG_MIN_VBLANK, GC02M1B_MIN_VBLANK},
++	{GC02M1B_REG_ROW_START, 2},
++	{GC02M1B_REG_WIN_HEIGHT, GC02M1B_NATIVE_HEIGHT + 4},
++	{GC02M1B_REG_FLIP, GC02M1B_FLIP_UNKNOWN},
++	{CCI_REG8(0x19), 0x04},
++	{CCI_REG8(0x24), 0x00},
++	{CCI_REG8(0x56), 0x20},
++	{CCI_REG8(0x5b), 0x00},
++	{CCI_REG8(0x5e), 0x01},
++	/* Analog register width */
++	{CCI_REG8(0x21), 0x3c},
++	{CCI_REG8(0x44), 0x20},
++	{CCI_REG8(0xcc), 0x01},
++	/* Analog mode */
++	{CCI_REG8(0x1a), 0x04},
++	{CCI_REG8(0x1f), 0x11},
++	{CCI_REG8(0x27), 0x30},
++	{CCI_REG8(0x2b), 0x00},
++	{CCI_REG8(0x33), 0x00},
++	{CCI_REG8(0x53), 0x90},
++	{CCI_REG8(0xe6), 0x50},
++	/* Analog voltage */
++	{CCI_REG8(0x39), 0x07},
++	{CCI_REG8(0x43), 0x04},
++	{CCI_REG8(0x46), 0x2a},
++	{CCI_REG8(0x7c), 0xa0},
++	{CCI_REG8(0xd0), 0xbe},
++	{CCI_REG8(0xd1), 0x60},
++	{CCI_REG8(0xd2), 0x40},
++	{CCI_REG8(0xd3), 0xf3},
++	{CCI_REG8(0xde), 0x1d},
++	/* Analog current */
++	{CCI_REG16(0xcd), 0x056f},
++	/* CISCTL RESET */
++	{GC02M1B_REG_PLL_ENABLE, 0x88},
++	{GC02M1B_REG_PAGE_SELECT, GC02M1B_CISCTL_RESET},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_PLL_ENABLE, 0x8e},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_PLL_ENABLE, 0x88},
++	{GC02M1B_REG_PAGE_SELECT, GC02M1B_CISCTL_RESET},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_PLL_ENABLE, 0x8e},
++	{GC02M1B_REG_PAGE_SELECT, 0x04},
++	{CCI_REG8(0xe0), 0x01},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	/* ISP */
++	{GC02M1B_REG_PAGE_SELECT, 0x01},
++	{CCI_REG8(0x53), 0x44},
++	{CCI_REG8(0x87), 0x53},
++	{CCI_REG8(0x89), 0x03},
++	/* Gain */
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{CCI_REG8(0xb0), 0x74},
++	{GC02M1B_REG_GAIN_VALUE, GC02M1B_AGAIN_MIN},
++	{GC02M1B_REG_GAIN_STEP, 0},
++	/* AGC table? Related to GC02M1B_AGC_PARAM */
++	{GC02M1B_REG_PAGE_SELECT, 0x04},
++	{CCI_REG8(0xd8), 0x00},
++	{CCI_REG8(0xc0), 0x40}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0x00}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0x60}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0xc0}, {CCI_REG8(0xc0), 0x2a},
++	{CCI_REG8(0xc0), 0x80}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0x00}, {CCI_REG8(0xc0), 0x40},
++	{CCI_REG8(0xc0), 0xa0}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0x90}, {CCI_REG8(0xc0), 0x19},
++	{CCI_REG8(0xc0), 0xc0}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0xd0}, {CCI_REG8(0xc0), 0x2f},
++	{CCI_REG8(0xc0), 0xe0}, {CCI_REG8(0xc0), 0x00},
++	{CCI_REG8(0xc0), 0x90}, {CCI_REG8(0xc0), 0x39},
++	{CCI_REG8(0xc0), 0x00}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0x20}, {CCI_REG8(0xc0), 0x04},
++	{CCI_REG8(0xc0), 0x20}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0xe0}, {CCI_REG8(0xc0), 0x0f},
++	{CCI_REG8(0xc0), 0x40}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0xe0}, {CCI_REG8(0xc0), 0x1a},
++	{CCI_REG8(0xc0), 0x60}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0x20}, {CCI_REG8(0xc0), 0x25},
++	{CCI_REG8(0xc0), 0x80}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0xa0}, {CCI_REG8(0xc0), 0x2c},
++	{CCI_REG8(0xc0), 0xa0}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0xe0}, {CCI_REG8(0xc0), 0x32},
++	{CCI_REG8(0xc0), 0xc0}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0x20}, {CCI_REG8(0xc0), 0x38},
++	{CCI_REG8(0xc0), 0xe0}, {CCI_REG8(0xc0), 0x01},
++	{CCI_REG8(0xc0), 0x60}, {CCI_REG8(0xc0), 0x3c},
++	{CCI_REG8(0xc0), 0x00}, {CCI_REG8(0xc0), 0x02},
++	{CCI_REG8(0xc0), 0xa0}, {CCI_REG8(0xc0), 0x40},
++	{CCI_REG8(0xc0), 0x80}, {CCI_REG8(0xc0), 0x02},
++	{CCI_REG8(0xc0), 0x18}, {CCI_REG8(0xc0), 0x5c},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{CCI_REG8(0x9f), 0x10},
++	/* BLK */
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{CCI_REG8(0x26), 0x20},
++	{GC02M1B_REG_PAGE_SELECT, 0x01},
++	{CCI_REG8(0x40), 0x22},
++	{CCI_REG8(0x46), 0x7f},
++	{CCI_REG8(0x49), 0x0f},
++	{CCI_REG8(0x4a), 0xf0},
++	{GC02M1B_REG_PAGE_SELECT, 0x04},
++	{CCI_REG8(0x14), 0x80},
++	{CCI_REG8(0x15), 0x80},
++	{CCI_REG8(0x16), 0x80},
++	{CCI_REG8(0x17), 0x80},
++	/* Anti blooming */
++	{GC02M1B_REG_PAGE_SELECT, 0x01},
++	{CCI_REG8(0x41), 0x20},
++	{CCI_REG8(0x4c), 0x00},
++	{CCI_REG8(0x4d), 0x0c},
++	{CCI_REG8(0x44), 0x08},
++	{CCI_REG8(0x48), 0x03},
++	/* Window */
++	{GC02M1B_REG_PAGE_SELECT, 0x01},
++	{GC02M1B_REG_CROP_ENABLE, 0x01},
++	{GC02M1B_REG_CROP_Y, 6},
++	{GC02M1B_REG_CROP_X, 6},
++	{GC02M1B_REG_CROP_HEIGHT, 1200},
++	{GC02M1B_REG_CROP_WIDTH, 1600},
++	/* MIPI */
++	{GC02M1B_REG_PAGE_SELECT, 0x03},
++	{GC02M1B_REG_DPHY_ENABLE, 0x20 |
++				  GC02M1B_PHY_CLK_EN |
++				  GC02M1B_PHY_LANE0_EN
++				},
++	{GC02M1B_REG_LANE_MODE, 0xce},
++	{CCI_REG8(0x04), 0x48},
++	{GC02M1B_REG_CLK_LANE_MODE, 0x00},
++	{GC02M1B_REG_LPX, 0x10},
++	{GC02M1B_REG_CLK_HS_PREP, 0x05},
++	{GC02M1B_REG_CLK_ZERO, 0x20},
++	{GC02M1B_REG_CLK_POST, 0x20},
++	{GC02M1B_REG_CLK_TRAIL, 0x08},
++	{GC02M1B_REG_HS_PREP, 0x06},
++	{GC02M1B_REG_HS_ZERO, 0x0a},
++	{GC02M1B_REG_HS_TRAIL, 0x08},
++	/* Out */
++	{GC02M1B_REG_PAGE_SELECT, 0x01},
++	{GC02M1B_REG_DEBUG_MODE, GC02M1B_DBG_BASE},
++	{GC02M1B_REG_PAGE_SELECT, 0x00},
++	{GC02M1B_REG_OUTPUT, 0x00},
++};
++
++/* Regulators supplies */
++static const char * const gc02m1b_supply_name[] = {
++	"vddio", /* Digital I/O (1.8V) suppply */
++	"vdda",  /* Analog (2.8V) supply */
++};
++#define GC02M1B_NUM_SUPPLIES ARRAY_SIZE(gc02m1b_supply_name)
++
++static const s64 gc02m1b_link_freq_menu[] = {
++	GC02M1B_1600_1200_LINKFREQ,
++};
++
++struct gc02m1b_mode {
++	unsigned int width;
++	unsigned int height;
++	unsigned long pixel_rate;
++	struct v4l2_rect crop;
++	unsigned int hblank;
++	unsigned int vblank;
++	unsigned int link_freq_index;
++};
++
++/* According to the partial datasheet it should also support a 720p 30 FPS mode
++   And an SVGA 60 FPS mode. Parameters unknown. */
++static const struct gc02m1b_mode supported_modes[] = {
++	{
++		/* 1600x1200 30fps mode */
++		.width = 1600,
++		.height = 1200,
++		.pixel_rate = GC02M1B_1600_1200_PIXELRATE,
++		.crop = {
++			.top = 0,
++			.left = 0,
++			.width = 1600,
++			.height = 1200,
++		},
++		.hblank = GC02M1B_1600_1200_HBLANK,
++		.vblank = GC02M1B_1600_1200_VBLANK,
++		.link_freq_index = 0,
++	},
++};
++
++struct gc02m1b_format {
++	unsigned int code;
++	unsigned int colorspace;
++};
++
++static const struct gc02m1b_format supported_formats[] = {
++	{
++		/* Userspace tools rarely understand MEDIA_BUS_FMT_Y10_1X10 */
++		.code           = MEDIA_BUS_FMT_SBGGR10_1X10,
++		.colorspace     = V4L2_COLORSPACE_RAW,
++	},
++	{
++		.code           = MEDIA_BUS_FMT_Y10_1X10,
++		.colorspace     = V4L2_COLORSPACE_RAW,
++	},
++};
++
++struct gc02m1b_ctrls {
++	struct v4l2_ctrl_handler handler;
++
++	struct v4l2_ctrl *test_pattern;
++	struct v4l2_ctrl *hflip;
++	struct v4l2_ctrl *vflip;
++	struct v4l2_ctrl *hblank;
++	struct v4l2_ctrl *vblank;
++	struct v4l2_ctrl *link_freq;
++	struct v4l2_ctrl *pixel_rate;
++	struct v4l2_ctrl *exposure;
++};
++
++struct gc02m1b {
++	struct v4l2_subdev sd;
++	struct media_pad pad;
++
++	struct regmap *regmap;
++	struct clk *xclk;
++
++	struct gpio_desc *reset_gpio;
++	struct regulator_bulk_data supplies[GC02M1B_NUM_SUPPLIES];
++
++	/* V4L2 controls */
++	struct gc02m1b_ctrls ctrls;
++
++	/* Current mode */
++	/* Only one is known to work at the moment, but just in case */
++	const struct gc02m1b_mode *mode;
++};
++
++static inline struct gc02m1b *to_gc02m1b(struct v4l2_subdev *_sd)
++{
++	return container_of(_sd, struct gc02m1b, sd);
++}
++
++static inline struct v4l2_subdev *gc02m1b_ctrl_to_sd(struct v4l2_ctrl *ctrl)
++{
++	return &container_of(ctrl->handler, struct gc02m1b,
++			     ctrls.handler)->sd;
++}
++
++static const struct gc02m1b_format *
++gc02m1b_get_format_code(struct gc02m1b *gc02m1b, u32 code)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(supported_formats); i++) {
++		if (supported_formats[i].code == code)
++			break;
++	}
++
++	if (i >= ARRAY_SIZE(supported_formats))
++		i = 0;
++
++	return &supported_formats[i];
++}
++
++static void gc02m1b_update_pad_format(struct gc02m1b *gc02m1b,
++				      const struct gc02m1b_mode *mode,
++				      struct v4l2_mbus_framefmt *fmt, u32 code,
++				      u32 colorspace)
++{
++	fmt->code = code;
++	fmt->width = mode->width;
++	fmt->height = mode->height;
++	fmt->field = V4L2_FIELD_NONE;
++	fmt->colorspace = colorspace;
++	fmt->ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
++	fmt->quantization = V4L2_QUANTIZATION_DEFAULT;
++	fmt->xfer_func = V4L2_XFER_FUNC_DEFAULT;
++}
++
++static int gc02m1b_init_state(struct v4l2_subdev *sd,
++			      struct v4l2_subdev_state *state)
++{
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	struct v4l2_mbus_framefmt *format;
++	struct v4l2_rect *crop;
++
++	/* Initialize pad format */
++	format = v4l2_subdev_state_get_format(state, 0);
++	gc02m1b_update_pad_format(gc02m1b, &supported_modes[0], format,
++				  MEDIA_BUS_FMT_SBGGR10_1X10,
++				  V4L2_COLORSPACE_RAW);
++
++	/* Initialize crop rectangle */
++	crop = v4l2_subdev_state_get_crop(state, 0);
++	*crop = supported_modes[0].crop;
++
++	return 0;
++}
++
++static int gc02m1b_get_selection(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *sd_state,
++				 struct v4l2_subdev_selection *sel)
++{
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++		sel->r = *v4l2_subdev_state_get_crop(sd_state, 0);
++		return 0;
++
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++		sel->r.top = 0;
++		sel->r.left = 0;
++		sel->r.width = GC02M1B_NATIVE_WIDTH;
++		sel->r.height = GC02M1B_NATIVE_HEIGHT;
++
++		return 0;
++
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r.top = 0;
++		sel->r.left = 0;
++		sel->r.width = 1600;
++		sel->r.height = 1200;
++
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
++static int gc02m1b_enum_mbus_code(struct v4l2_subdev *sd,
++				  struct v4l2_subdev_state *sd_state,
++				  struct v4l2_subdev_mbus_code_enum *code)
++{
++	if (code->index >= ARRAY_SIZE(supported_formats))
++		return -EINVAL;
++
++	code->code = supported_formats[code->index].code;
++	return 0;
++}
++
++static int gc02m1b_enum_frame_size(struct v4l2_subdev *sd,
++				   struct v4l2_subdev_state *sd_state,
++				   struct v4l2_subdev_frame_size_enum *fse)
++{
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	const struct gc02m1b_format *gc02m1b_format;
++	u32 code;
++
++	if (fse->index >= ARRAY_SIZE(supported_modes))
++		return -EINVAL;
++
++	gc02m1b_format = gc02m1b_get_format_code(gc02m1b, fse->code);
++	code = gc02m1b_format->code;
++	if (fse->code != code)
++		return -EINVAL;
++
++	fse->min_width = supported_modes[fse->index].width;
++	fse->max_width = fse->min_width;
++	fse->min_height = supported_modes[fse->index].height;
++	fse->max_height = fse->min_height;
++
++	return 0;
++}
++
++static int gc02m1b_set_pad_format(struct v4l2_subdev *sd,
++				  struct v4l2_subdev_state *sd_state,
++				  struct v4l2_subdev_format *fmt)
++{
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	const struct gc02m1b_mode *mode;
++	const struct gc02m1b_format *gc02m1b_fmt;
++	struct v4l2_mbus_framefmt *framefmt;
++	struct gc02m1b_ctrls *ctrls = &gc02m1b->ctrls;
++	struct v4l2_rect *crop;
++
++	gc02m1b_fmt = gc02m1b_get_format_code(gc02m1b, fmt->format.code);
++	mode = v4l2_find_nearest_size(supported_modes,
++				      ARRAY_SIZE(supported_modes),
++				      width, height,
++				      fmt->format.width, fmt->format.height);
++
++	gc02m1b_update_pad_format(gc02m1b, mode, &fmt->format, gc02m1b_fmt->code,
++				 gc02m1b_fmt->colorspace);
++	framefmt = v4l2_subdev_state_get_format(sd_state, fmt->pad);
++	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
++		gc02m1b->mode = mode;
++		__v4l2_ctrl_s_ctrl_int64(ctrls->pixel_rate, mode->pixel_rate);
++		__v4l2_ctrl_s_ctrl(ctrls->link_freq, mode->link_freq_index);
++		__v4l2_ctrl_s_ctrl(ctrls->hblank, mode->hblank);
++		__v4l2_ctrl_s_ctrl(ctrls->vblank, mode->vblank);
++	}
++	*framefmt = fmt->format;
++	crop = v4l2_subdev_state_get_crop(sd_state, fmt->pad);
++	*crop = mode->crop;
++
++	return 0;
++}
++
++/* Sets the frame rate */
++#if 0
++static int set_frame_length(struct gc02m1b *gc02m1b, u16 frame_length)
++{
++	int ret = 0;
++	cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0, &ret);
++	return cci_write(gc02m1b->regmap, GC02M1B_REG_FRAME_LENGTH,
++			 frame_length & 0x3fff, &ret);
++}
++#endif
++
++/* Exposure time */
++static int set_shutter(struct gc02m1b *gc02m1b, u16 shutter)
++{
++	int ret = 0;
++
++#if 0
++	/* The frame length formula from the partial datasheet.
++	 * It does not appear to work and causes the frame rate to be too low.
++	 * Camera seem to work fine with the default value under any lighting.
++	 */
++	if (gc02m1b->mode) {
++		int min_frame;
++		u16 actual_frame;
++		/* min_frame_len = window height + 32 + min_vblank */
++		min_frame = gc02m1b->mode->height + 32 + gc02m1b->mode->vblank;
++		if (shutter < min_frame - 16)
++			actual_frame = min_frame;
++		else
++			actual_frame = shutter + 16;
++		set_frame_length(gc02m1b, actual_frame);
++	}
++#endif
++
++	cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0, &ret);
++	return cci_write(gc02m1b->regmap, GC02M1B_REG_EXPOSURE,
++			 shutter & 0x3fff, &ret);
++}
++
++static int set_gain(struct gc02m1b *gc02m1b, u16 gain)
++{
++	u32 temp_gain;
++	int gain_index;
++	int ret = 0;
++
++	if (gain < GC02M1B_AGAIN_MIN || gain > GC02M1B_AGAIN_MAX) {
++		if (gain < GC02M1B_AGAIN_MIN)
++			gain = GC02M1B_AGAIN_MIN;
++		if (gain > GC02M1B_AGAIN_MAX)
++			gain = GC02M1B_AGAIN_MAX;
++	}
++
++	for (gain_index = GC02M1B_NUM_GAIN_STEPS - 1; gain_index >= 0;
++	     gain_index--)
++		if (gain >= GC02M1B_AGC_PARAM[gain_index][0])
++			break;
++	temp_gain = gain * GC02M1B_AGAIN_MIN /
++		    GC02M1B_AGC_PARAM[gain_index][0];
++
++	cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0, &ret);
++	cci_write(gc02m1b->regmap, GC02M1B_REG_GAIN_STEP,
++		  GC02M1B_AGC_PARAM[gain_index][1], &ret);
++	return cci_write(gc02m1b->regmap, GC02M1B_REG_GAIN_VALUE, temp_gain  & 0x1fff, &ret);
++}
++
++static int gc02m1b_enable_streams(struct v4l2_subdev *sd,
++				  struct v4l2_subdev_state *state, u32 pad,
++				  u64 streams_mask)
++{
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	struct i2c_client *client = v4l2_get_subdevdata(&gc02m1b->sd);
++	const struct gc02m1b_format *gc02m1b_format;
++	struct v4l2_mbus_framefmt *fmt;
++	int ret;
++
++	ret = pm_runtime_resume_and_get(&client->dev);
++	if (ret < 0)
++		return ret;
++
++	/* Initialize streaming */
++	cci_multi_reg_write(gc02m1b->regmap, gc02m1b_common_regs,
++			    ARRAY_SIZE(gc02m1b_common_regs), &ret);
++	if (ret) {
++		dev_err(&client->dev, "%s failed to write regs\n", __func__);
++		goto err_rpm_put;
++	}
++
++	fmt = v4l2_subdev_state_get_format(state, 0);
++	gc02m1b_format = gc02m1b_get_format_code(gc02m1b, fmt->code);
++
++	/* Apply customized values from user */
++	ret =  __v4l2_ctrl_handler_setup(&gc02m1b->ctrls.handler);
++	if (ret) {
++		dev_err(&client->dev, "%s failed to apply ctrls\n", __func__);
++		goto err_rpm_put;
++	}
++
++	/* Engage */
++	cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0x00, &ret);
++	cci_write(gc02m1b->regmap, GC02M1B_REG_OUTPUT, 0x90, &ret);
++
++	return 0;
++
++err_rpm_put:
++	pm_runtime_put_autosuspend(&client->dev);
++	return ret;
++}
++
++static int gc02m1b_disable_streams(struct v4l2_subdev *sd,
++				   struct v4l2_subdev_state *state, u32 pad,
++				   u64 streams_mask)
++{
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	struct i2c_client *client = v4l2_get_subdevdata(&gc02m1b->sd);
++	int ret = 0;
++
++	/* Disengage? */
++	/*
++	 * cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0x00, &ret);
++	 * cci_write(gc02m1b->regmap, GC02M1B_REG_OUTPUT, 0x00, &ret);
++	 */
++
++	/* Stop sequence unknown, so just turn the power off */
++	pm_runtime_put_autosuspend(&client->dev);
++
++	return ret;
++}
++
++static int gc02m1b_power_on(struct device *dev)
++{
++	struct v4l2_subdev *sd = dev_get_drvdata(dev);
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	int ret;
++
++	ret = regulator_bulk_enable(GC02M1B_NUM_SUPPLIES, gc02m1b->supplies);
++	if (ret) {
++		dev_err(dev, "failed to enable regulators\n");
++		return ret;
++	}
++
++	ret = clk_prepare_enable(gc02m1b->xclk);
++	if (ret) {
++		dev_err(dev, "failed to enable clock\n");
++		goto reg_off;
++	}
++
++	gpiod_set_value_cansleep(gc02m1b->reset_gpio, 0);
++
++	msleep(41);
++
++	return 0;
++
++reg_off:
++	regulator_bulk_disable(GC02M1B_NUM_SUPPLIES, gc02m1b->supplies);
++
++	return ret;
++}
++
++static int gc02m1b_power_off(struct device *dev)
++{
++	struct v4l2_subdev *sd = dev_get_drvdata(dev);
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++
++	gpiod_set_value_cansleep(gc02m1b->reset_gpio, 1);
++	clk_disable_unprepare(gc02m1b->xclk);
++	regulator_bulk_disable(GC02M1B_NUM_SUPPLIES, gc02m1b->supplies);
++
++	return 0;
++}
++
++static int gc02m1b_get_regulators(struct gc02m1b *gc02m1b)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&gc02m1b->sd);
++	unsigned int i;
++
++	for (i = 0; i < GC02M1B_NUM_SUPPLIES; i++)
++		gc02m1b->supplies[i].supply = gc02m1b_supply_name[i];
++
++	return devm_regulator_bulk_get(&client->dev, GC02M1B_NUM_SUPPLIES,
++				       gc02m1b->supplies);
++}
++
++static int gc02m1b_identify_module(struct gc02m1b *gc02m1b)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&gc02m1b->sd);
++	int ret;
++	u64 chip_id;
++
++	ret = cci_read(gc02m1b->regmap, GC02M1B_REG_CHIP_ID, &chip_id, NULL);
++	if (ret) {
++		dev_err(&client->dev, "failed to read chip id (%d)\n", ret);
++		return ret;
++	}
++
++	if (chip_id != GC02M1B_CHIP_ID) {
++		dev_err(&client->dev, "chip id mismatch: %x!=%llx\n",
++			GC02M1B_CHIP_ID, chip_id);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static const struct v4l2_subdev_video_ops gc02m1b_video_ops = {
++	.s_stream = v4l2_subdev_s_stream_helper,
++};
++
++static const struct v4l2_subdev_pad_ops gc02m1b_pad_ops = {
++	.enum_mbus_code = gc02m1b_enum_mbus_code,
++	.get_fmt = v4l2_subdev_get_fmt,
++	.set_fmt = gc02m1b_set_pad_format,
++	.get_selection = gc02m1b_get_selection,
++	.enum_frame_size = gc02m1b_enum_frame_size,
++	.enable_streams = gc02m1b_enable_streams,
++	.disable_streams = gc02m1b_disable_streams,
++};
++
++static const struct v4l2_subdev_ops gc02m1b_subdev_ops = {
++	.video = &gc02m1b_video_ops,
++	.pad = &gc02m1b_pad_ops,
++};
++
++static const struct v4l2_subdev_internal_ops gc02m1b_subdev_internal_ops = {
++	.init_state = gc02m1b_init_state,
++};
++
++static const char * const test_pattern_menu[] = {
++	"Disabled",
++	"Colored patterns",
++};
++
++static const u8 test_pattern_val[] = {
++	0,
++	GC02M1B_DBG_TEST_PATTERN_ENABLE,
++};
++
++static int gc02m1b_set_ctrl_test_pattern(struct gc02m1b *gc02m1b, int value)
++{
++	int ret = 0;
++
++	if (!value) {
++		/* Disable test pattern */
++		cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 1, &ret);
++		cci_write(gc02m1b->regmap, GC02M1B_REG_DEBUG_MODE,
++			  GC02M1B_DBG_BASE, &ret);
++		return cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0,
++				 &ret);
++	}
++
++	/* Enable test pattern */
++	cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 1, &ret);
++	cci_write(gc02m1b->regmap, GC02M1B_REG_DEBUG_MODE,
++		  GC02M1B_DBG_BASE | GC02M1B_DBG_TEST_PATTERN_ENABLE |
++		  test_pattern_val[value], &ret);
++	return cci_write(gc02m1b->regmap, GC02M1B_REG_PAGE_SELECT, 0, &ret);
++}
++
++static int gc02m1b_s_ctrl(struct v4l2_ctrl *ctrl)
++{
++	struct v4l2_subdev *sd = gc02m1b_ctrl_to_sd(ctrl);
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++	int ret;
++
++	if (pm_runtime_get_if_in_use(&client->dev) == 0)
++		return 0;
++
++	switch (ctrl->id) {
++	case V4L2_CID_ANALOGUE_GAIN:
++		ret = set_gain(gc02m1b, ctrl->val);
++		break;
++	case V4L2_CID_EXPOSURE:
++		ret = set_shutter(gc02m1b, ctrl->val);
++		break;
++	case V4L2_CID_HBLANK:
++		ret = cci_write(gc02m1b->regmap, GC02M1B_REG_LINE_LENGTH,
++				ctrl->val, NULL);
++		break;
++	case V4L2_CID_VBLANK:
++		ret = cci_write(gc02m1b->regmap, GC02M1B_REG_VBLANK,
++				ctrl->val, NULL);
++		break;
++	case V4L2_CID_TEST_PATTERN:
++		ret = gc02m1b_set_ctrl_test_pattern(gc02m1b, ctrl->val);
++		break;
++	case V4L2_CID_HFLIP:
++		ret = cci_update_bits(gc02m1b->regmap, GC02M1B_REG_FLIP,
++				      GC02M1B_FLIP_HORIZONTAL,
++				      (ctrl->val ? GC02M1B_FLIP_HORIZONTAL : 0),
++				      NULL);
++		break;
++	case V4L2_CID_VFLIP:
++		ret = cci_update_bits(gc02m1b->regmap, GC02M1B_REG_FLIP,
++				      GC02M1B_FLIP_VERTICAL,
++				      (ctrl->val ? GC02M1B_FLIP_VERTICAL : 0),
++				      NULL);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	pm_runtime_put_autosuspend(&client->dev);
++
++	return ret;
++}
++
++static const struct v4l2_ctrl_ops gc02m1b_ctrl_ops = {
++	.s_ctrl = gc02m1b_s_ctrl,
++};
++
++static int gc02m1b_init_controls(struct gc02m1b *gc02m1b)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(&gc02m1b->sd);
++	const struct v4l2_ctrl_ops *ops = &gc02m1b_ctrl_ops;
++	struct gc02m1b_ctrls *ctrls = &gc02m1b->ctrls;
++	struct v4l2_ctrl_handler *hdl = &ctrls->handler;
++	struct v4l2_fwnode_device_properties props;
++	int ret;
++
++	ret = v4l2_ctrl_handler_init(hdl, 12);
++	if (ret)
++		return ret;
++
++	ctrls->pixel_rate = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_PIXEL_RATE,
++					      GC02M1B_1600_1200_PIXELRATE,
++					      GC02M1B_1600_1200_PIXELRATE, 1,
++					      supported_modes[0].pixel_rate);
++
++	ctrls->link_freq = v4l2_ctrl_new_int_menu(hdl, ops, V4L2_CID_LINK_FREQ,
++						  ARRAY_SIZE(gc02m1b_link_freq_menu) - 1,
++						  0, gc02m1b_link_freq_menu);
++	if (ctrls->link_freq)
++		ctrls->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
++
++	v4l2_ctrl_new_std(hdl, ops, V4L2_CID_ANALOGUE_GAIN,
++			  GC02M1B_AGAIN_MIN, GC02M1B_AGAIN_MAX,
++			  GC02M1B_AGAIN_STEP, GC02M1B_AGAIN_DEFAULT);
++
++	ctrls->exposure = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_EXPOSURE,
++					    GC02M1B_EXPOSURE_MIN,
++					    GC02M1B_EXPOSURE_MAX,
++					    GC02M1B_EXPOSURE_STEP,
++					    GC02M1B_EXPOSURE_DEFAULT);
++
++	ctrls->hblank = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_HBLANK,
++					  0, 0xfff, 1, GC02M1B_1600_1200_HBLANK);
++
++	ctrls->vblank = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_VBLANK,
++					  0, 0x1fff, 1, GC02M1B_1600_1200_VBLANK);
++
++	ctrls->test_pattern =
++		v4l2_ctrl_new_std_menu_items(hdl, ops, V4L2_CID_TEST_PATTERN,
++					     ARRAY_SIZE(test_pattern_menu) - 1,
++					     0, 0, test_pattern_menu);
++
++	ctrls->hflip = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_HFLIP,
++					 0, 1, 1, 0);
++
++	ctrls->vflip = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_VFLIP,
++					 0, 1, 1, 0);
++
++	if (hdl->error) {
++		ret = hdl->error;
++		dev_err(&client->dev, "control init failed (%d)\n", ret);
++		goto error;
++	}
++
++	ret = v4l2_fwnode_device_parse(&client->dev, &props);
++	if (ret)
++		goto error;
++
++	ret = v4l2_ctrl_new_fwnode_properties(hdl, &gc02m1b_ctrl_ops, &props);
++	if (ret)
++		goto error;
++
++	gc02m1b->sd.ctrl_handler = hdl;
++
++	return 0;
++
++error:
++	v4l2_ctrl_handler_free(hdl);
++
++	return ret;
++}
++
++static int gc02m1b_check_hwcfg(struct device *dev)
++{
++	struct fwnode_handle *endpoint;
++	struct v4l2_fwnode_endpoint ep_cfg = {
++		.bus_type = V4L2_MBUS_CSI2_DPHY
++	};
++	int ret;
++
++	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(dev), NULL);
++	if (!endpoint) {
++		dev_err(dev, "endpoint node not found\n");
++		return -EINVAL;
++	}
++
++	ret = v4l2_fwnode_endpoint_alloc_parse(endpoint, &ep_cfg);
++	fwnode_handle_put(endpoint);
++	if (ret)
++		return ret;
++
++	/* Check the number of MIPI CSI2 data lanes */
++	if (ep_cfg.bus.mipi_csi2.num_data_lanes != 1) {
++		dev_err(dev, "only 1 data lane is supported\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
++	/* Check the link frequency set in device tree */
++	if (!ep_cfg.nr_of_link_frequencies) {
++		dev_err(dev, "link-frequency property not found in DT\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (ep_cfg.nr_of_link_frequencies != 1 ||
++	    ep_cfg.link_frequencies[0] != GC02M1B_1600_1200_LINKFREQ) {
++		dev_err(dev, "Invalid link-frequencies provided\n");
++		ret = -EINVAL;
++	}
++
++out:
++	v4l2_fwnode_endpoint_free(&ep_cfg);
++
++	return ret;
++}
++
++static int gc02m1b_probe(struct i2c_client *client)
++{
++	struct device *dev = &client->dev;
++	unsigned int xclk_freq;
++	struct gc02m1b *gc02m1b;
++	int ret;
++
++	gc02m1b = devm_kzalloc(&client->dev, sizeof(*gc02m1b), GFP_KERNEL);
++	if (!gc02m1b)
++		return -ENOMEM;
++
++	v4l2_i2c_subdev_init(&gc02m1b->sd, client, &gc02m1b_subdev_ops);
++	gc02m1b->sd.internal_ops = &gc02m1b_subdev_internal_ops;
++
++	/* Check the hardware configuration in device tree */
++	if (gc02m1b_check_hwcfg(dev))
++		return -EINVAL;
++
++	/* Get system clock (xclk) */
++	gc02m1b->xclk = devm_v4l2_sensor_clk_get(dev, NULL);
++	if (IS_ERR(gc02m1b->xclk))
++		return dev_err_probe(dev, PTR_ERR(gc02m1b->xclk),
++				     "failed to get xclk\n");
++
++	xclk_freq = clk_get_rate(gc02m1b->xclk);
++	if (xclk_freq != GC02M1B_XCLK_FREQ) {
++		dev_err(dev, "xclk frequency not supported: %d Hz\n",
++			xclk_freq);
++		return -EINVAL;
++	}
++
++	ret = gc02m1b_get_regulators(gc02m1b);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to get regulators\n");
++
++	/* Request optional reset pin */
++	gc02m1b->reset_gpio = devm_gpiod_get_optional(dev, "reset",
++						     GPIOD_OUT_HIGH);
++	if (IS_ERR(gc02m1b->reset_gpio))
++		return dev_err_probe(dev, PTR_ERR(gc02m1b->reset_gpio),
++				     "failed to get reset_gpio\n");
++
++	/* Initialise the regmap for further cci access */
++	gc02m1b->regmap = devm_cci_regmap_init_i2c(client, 8);
++	if (IS_ERR(gc02m1b->regmap))
++		return dev_err_probe(dev, PTR_ERR(gc02m1b->regmap),
++				     "failed to get cci regmap\n");
++
++	/* The sensor must be powered to read the CHIP_ID register */
++	ret = gc02m1b_power_on(dev);
++	if (ret)
++		return ret;
++
++	ret = gc02m1b_identify_module(gc02m1b);
++	if (ret)
++		goto error_power_off;
++
++	/* Set default (and only) mode */
++	gc02m1b->mode = &supported_modes[0];
++
++	ret = gc02m1b_init_controls(gc02m1b);
++	if (ret)
++		goto error_power_off;
++
++	/* Initialize subdev */
++	gc02m1b->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
++	gc02m1b->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
++
++	/* Initialize source pad */
++	gc02m1b->pad.flags = MEDIA_PAD_FL_SOURCE;
++
++	ret = media_entity_pads_init(&gc02m1b->sd.entity, 1, &gc02m1b->pad);
++	if (ret) {
++		dev_err(dev, "failed to init entity pads: %d\n", ret);
++		goto error_handler_free;
++	}
++
++	gc02m1b->sd.state_lock = gc02m1b->ctrls.handler.lock;
++
++	ret = v4l2_subdev_init_finalize(&gc02m1b->sd);
++	if (ret < 0) {
++		dev_err(dev, "subdev init error: %d\n", ret);
++		goto error_media_entity;
++	}
++
++	/* Enable runtime PM and turn off the device */
++	pm_runtime_set_active(dev);
++	pm_runtime_get_noresume(&client->dev);
++	pm_runtime_enable(dev);
++
++	pm_runtime_set_autosuspend_delay(&client->dev, 1000);
++	pm_runtime_use_autosuspend(&client->dev);
++	pm_runtime_put_autosuspend(&client->dev);
++
++	ret = v4l2_async_register_subdev_sensor(&gc02m1b->sd);
++	if (ret < 0) {
++		dev_err(dev, "failed to register sensor sub-device: %d\n", ret);
++		goto error_subdev_cleanup;
++	}
++
++	return 0;
++
++error_subdev_cleanup:
++	v4l2_subdev_cleanup(&gc02m1b->sd);
++	pm_runtime_disable(&client->dev);
++	pm_runtime_set_suspended(&client->dev);
++
++error_media_entity:
++	media_entity_cleanup(&gc02m1b->sd.entity);
++
++error_handler_free:
++	v4l2_ctrl_handler_free(&gc02m1b->ctrls.handler);
++
++error_power_off:
++	gc02m1b_power_off(dev);
++
++	return ret;
++}
++
++static void gc02m1b_remove(struct i2c_client *client)
++{
++	struct v4l2_subdev *sd = i2c_get_clientdata(client);
++	struct gc02m1b *gc02m1b = to_gc02m1b(sd);
++
++	v4l2_subdev_cleanup(sd);
++	v4l2_async_unregister_subdev(sd);
++	media_entity_cleanup(&sd->entity);
++	v4l2_ctrl_handler_free(&gc02m1b->ctrls.handler);
++
++	pm_runtime_disable(&client->dev);
++	if (!pm_runtime_status_suspended(&client->dev))
++		gc02m1b_power_off(&client->dev);
++	pm_runtime_set_suspended(&client->dev);
++}
++
++static const struct of_device_id gc02m1b_dt_ids[] = {
++	{ .compatible = "galaxycore,gc02m1b" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, gc02m1b_dt_ids);
++
++static const struct dev_pm_ops gc02m1b_pm_ops = {
++	RUNTIME_PM_OPS(gc02m1b_power_off, gc02m1b_power_on, NULL)
++};
++
++static struct i2c_driver gc02m1b_i2c_driver = {
++	.driver = {
++		.name = "gc02m1b",
++		.of_match_table = gc02m1b_dt_ids,
++		.pm = pm_ptr(&gc02m1b_pm_ops),
++	},
++	.probe = gc02m1b_probe,
++	.remove = gc02m1b_remove,
++};
++
++module_i2c_driver(gc02m1b_i2c_driver);
++
++MODULE_AUTHOR("Lona Lit <artlav@mm.st>");
++MODULE_DESCRIPTION("GalaxyCore GC02M1B sensor driver");
++MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

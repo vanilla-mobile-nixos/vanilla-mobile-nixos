@@ -1,0 +1,42 @@
+From 3f24d862206d089f2c160154ae627e475710695b Mon Sep 17 00:00:00 2001
+From: David Heidelberg <david@ixit.cz>
+Date: Wed, 29 Jul 2026 22:20:04 +0200
+Subject: [PATCH 019/136] FROMLIST v9 media: qcom: camss: Enable C-PHY where
+ available
+
+After all the changes done we can now safely enable C-PHY for a SoC
+where it's available.
+
+Acked-by: Cory Keitz <ckeitz@amazon.com>
+Reviewed-by: Bryan O'Donoghue <bod@kernel.org>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: David Heidelberg <david@ixit.cz>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/media/platform/qcom/camss/camss.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/media/platform/qcom/camss/camss.c b/drivers/media/platform/qcom/camss/camss.c
+index 66171069057f..ebf8f21b5fa2 100644
+--- a/drivers/media/platform/qcom/camss/camss.c
++++ b/drivers/media/platform/qcom/camss/camss.c
+@@ -4765,11 +4765,11 @@ static int camss_parse_endpoint_node(struct device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	/*
+-	 * Most SoCs support both D-PHY and C-PHY standards, but currently only
+-	 * D-PHY is supported in the driver.
+-	 */
+-	if (vep.bus_type != V4L2_MBUS_CSI2_DPHY) {
++	switch (vep.bus_type) {
++	case V4L2_MBUS_CSI2_CPHY:
++	case V4L2_MBUS_CSI2_DPHY:
++		break;
++	default:
+ 		dev_err(dev, "Unsupported bus type %d\n", vep.bus_type);
+ 		return -EINVAL;
+ 	}
+-- 
+2.55.0
+

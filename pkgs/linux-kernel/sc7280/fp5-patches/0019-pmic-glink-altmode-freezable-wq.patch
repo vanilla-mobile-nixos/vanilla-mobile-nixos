@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abel Vesa <abel.vesa@linaro.org>
+Date: Sun, 25 Oct 2026 17:53:25 +0100
+Subject: [PATCH 19/20] soc: qcom: pmic_glink_altmode: use a freezable
+ workqueue for the altmode worker
+
+Abel Vesa <abel.vesa@linaro.org>, posted to linux-arm-msm.
+
+  Fixes: 080b4e24852b ("soc: qcom: pmic_glink: Introduce altmode support")
+  Cc: stable@vger.kernel.org    # 6.3
+
+pmic_glink_altmode_worker() runs on system_wq, which is not frozen for
+suspend, so it can reach a Type-C retimer, switch or mux over i2c while the
+i2c controller is still suspended. Queue it on system_freezable_wq instead,
+so it does not run until the devices have resumed.
+
+Observed upstream on X Elite (ParadeTech PS8830); the same warning appears
+here on the Fairphone 5 via the ucsi connector change path, fixed by the
+companion patch ucsi-connector-change-on-freezable-wq.
+
+The hunks below are regenerated against this tree, whose line numbers differ
+from the posted patch.
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/soc/qcom/pmic_glink_altmode.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index 13c434f8d03a..465e5d2316a0 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -451,7 +451,7 @@ static void pmic_glink_altmode_sc8180xp_notify(struct pmic_glink_altmode *altmod
+ 	alt_port->mode = mode;
+ 	alt_port->hpd_state = hpd_state;
+ 	alt_port->hpd_irq = hpd_irq;
+-	schedule_work(&alt_port->work);
++	queue_work(system_freezable_wq, &alt_port->work);
+ }
+ 
+ #define SC8280XP_DPAM_MASK	0x3f
+@@ -502,7 +502,7 @@ static void pmic_glink_altmode_sc8280xp_notify(struct pmic_glink_altmode *altmod
+ 		alt_port->tbt_data = *tbt;
+ 	}
+ 
+-	schedule_work(&alt_port->work);
++	queue_work(system_freezable_wq, &alt_port->work);
+ }
+ 
+ static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv)

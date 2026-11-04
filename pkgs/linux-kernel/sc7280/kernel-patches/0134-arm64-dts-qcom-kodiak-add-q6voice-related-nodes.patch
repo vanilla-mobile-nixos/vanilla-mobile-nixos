@@ -1,0 +1,53 @@
+From 4bc8a69f38aa2eca538bd81d8472fef6ce8347dd Mon Sep 17 00:00:00 2001
+From: Bhushan Shah <bhushan.shah@machinesoul.in>
+Date: Mon, 2 Feb 2026 19:07:57 +0530
+Subject: [PATCH 134/136] arm64: dts: qcom: kodiak: add q6voice related nodes
+
+Signed-off-by: Bhushan Shah <bhushan.shah@machinesoul.in>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/kodiak.dtsi | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index 990d851177dd..2d01c4ab2cc7 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -4574,6 +4574,34 @@ q6routing: routing {
+ 							#sound-dai-cells = <0>;
+ 						};
+ 					};
++
++					q6mvm: apr-service@9 {
++						compatible = "qcom,q6mvm";
++						reg = <APR_SVC_ADSP_MVM>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						status = "disabled";
++
++						q6voicedai: dais {
++							compatible = "qcom,q6voice-dais";
++							#address-cells = <1>;
++							#size-cells = <0>;
++							#sound-dai-cells = <1>;
++						};
++					};
++
++					q6cvs: apr-service@a {
++						compatible = "qcom,q6cvs";
++						reg = <APR_SVC_ADSP_CVS>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						status = "disabled";
++					};
++
++					q6cvp: apr-service@b {
++						compatible = "qcom,q6cvp";
++						reg = <APR_SVC_ADSP_CVP>;
++						qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
++						status = "disabled";
++					};
+ 				};
+ 
+ 				fastrpc {
+-- 
+2.55.0
+

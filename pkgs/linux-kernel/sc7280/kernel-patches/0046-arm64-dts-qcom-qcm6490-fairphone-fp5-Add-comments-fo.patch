@@ -1,0 +1,40 @@
+From d74491292584832000d576652d442c305320e105 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Mon, 18 Nov 2024 20:50:10 +0100
+Subject: [PATCH 046/136] arm64: dts: qcom: qcm6490-fairphone-fp5: Add comments
+ for rear cam components
+
+Just placeholders for now...
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index 1f4b189d739b..3e59738fb5e5 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -712,7 +712,8 @@ &cci0 {
+ };
+ 
+ &cci0_i2c0 {
+-	/* IMX800 @ 1a */
++	/* actuator@c (asahi-kasei,ak7377) */
++	/* camera@1a (sony,imx800) */
+ 
+ 	eeprom@50 {
+ 		compatible = "puya,p24c256c", "atmel,24c256";
+@@ -720,6 +721,8 @@ eeprom@50 {
+ 		vcc-supply = <&vreg_l6p>;
+ 		read-only;
+ 	};
++
++	/* actuator@72 (dongwoon,dw9784) OIS */
+ };
+ 
+ &cci0_i2c1 {
+-- 
+2.55.0
+

@@ -1,0 +1,60 @@
+From a90e5749b47191d6578fdc10685d67a45f298cf9 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <error27@gmail.com>
+Date: Thu, 1 Oct 2026 09:51:39 +0300
+Subject: [PATCH 004/136] FROMGIT ASoC: codecs: aw88261: small cleanup in
+ aw88261_set_tdm_slot()
+
+This code triggers a Smatch false positive:
+
+    sound/soc/codecs/aw88261.c:858 aw88261_set_tdm_slot()
+    error: uninitialized symbol 'chan'.
+
+This would only happen if both the tx and rx masks were zero which is
+a nonsense scenario and reviewing the callers shows that it never
+happens.
+
+However, if the rx_mask is zero then we're comparing the mask from RX
+against the chan from TX which is confusing:
+
+	if ((rx_mask & ~BIT(chan)) != 0) {
+             ^^ rx          ^^^^ tx chan
+
+Of course, in that case the condition is going to be false because
+the rx_mask is zero.  So it's fine.  But it would be more clear to move
+the condition inside the if statement and it silences the static checker
+warning as well.
+
+Signed-off-by: Dan Carpenter <error27@gmail.com>
+Link: https://patch.msgid.link/ar4C-0NIYXiAvxvv@stanley.mountain
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/codecs/aw88261.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/sound/soc/codecs/aw88261.c b/sound/soc/codecs/aw88261.c
+index b8d06534bc8f..8671069f4c18 100644
+--- a/sound/soc/codecs/aw88261.c
++++ b/sound/soc/codecs/aw88261.c
+@@ -853,13 +853,13 @@ static int aw88261_set_tdm_slot(struct snd_soc_dai *dai,
+ 			return -EINVAL;
+ 
+ 		aw88261->rxl_slotvld_mask = chan << AW88261_I2S_RXL_SLOTVLD_START_BIT;
+-	}
+ 
+-	if ((rx_mask & ~BIT(chan)) != 0) {
+-		if ((chan = __ffs(rx_mask & ~BIT(chan))) > 16)
+-			return -EINVAL;
++		if ((rx_mask & ~BIT(chan)) != 0) {
++			if ((chan = __ffs(rx_mask & ~BIT(chan))) > 16)
++				return -EINVAL;
+ 
+-		aw88261->rxr_slotvld_mask = chan << AW88261_I2S_RXR_SLOTVLD_START_BIT;
++			aw88261->rxr_slotvld_mask = chan << AW88261_I2S_RXR_SLOTVLD_START_BIT;
++		}
+ 	}
+ 
+ 	return 0;
+-- 
+2.55.0
+

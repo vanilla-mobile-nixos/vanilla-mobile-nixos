@@ -1,0 +1,76 @@
+From 364894d6dbc41f7140f62cf930e89f4e30ea6b72 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Mon, 18 Nov 2024 20:45:31 +0100
+Subject: [PATCH 045/136] arm64: dts: qcom: qcm6490-fairphone-fp5: Add UW rear
+ camera support
+
+Add the necessary nodes to enable the ultra-wide rear camera (Sony
+IMX858).
+
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/qcm6490-fairphone-fp5.dts   | 40 ++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+index e9bf2faf6628..1f4b189d739b 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-fairphone-fp5.dts
+@@ -688,6 +688,15 @@ &camss {
+ 	status = "okay";
+ 
+ 	ports {
++		port@1 {
++			csiphy1_ep: endpoint {
++				clock-lanes = <7>;
++				data-lanes = <0 1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				remote-endpoint = <&camera_imx858_ep>;
++			};
++		};
++
+ 		port@3 {
+ 			csiphy3_ep: endpoint {
+ 				data-lanes = <0 1 2 3>;
+@@ -723,7 +732,36 @@ camera_imx858_dw9800k: actuator@e {
+ 		dongwoon,vcm-prescale = <16>;
+ 	};
+ 
+-	/* IMX858 @ 29 */
++	camera@29 {
++		compatible = "sony,imx858";
++		reg = <0x29>;
++
++		vdig-supply = <&vreg_l1p>;
++		vana-supply = <&vreg_l4p>;
++		vif-supply = <&vreg_l6p>;
++
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		reset-gpios = <&tlmm 21 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&cam_mclk1_default>;
++		pinctrl-names = "default";
++
++		orientation = <1>; /* Rear facing */
++		rotation = <270>;
++
++		lens-focus = <&camera_imx858_dw9800k>;
++
++		port {
++			camera_imx858_ep: endpoint {
++				data-lanes = <1 2 3 4>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				link-frequencies = /bits/ 64 <600000000>;
++				remote-endpoint = <&csiphy1_ep>;
++			};
++		};
++	};
+ 
+ 	eeprom@54 {
+ 		compatible = "giantec,gt24p128f", "atmel,24c128";
+-- 
+2.55.0
+

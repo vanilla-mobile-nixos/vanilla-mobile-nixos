@@ -1,0 +1,33 @@
+From 64270789617948e5296a8dd723bfb75e4158135f Mon Sep 17 00:00:00 2001
+From: Danila Tikhonov <danila@jiaxyga.com>
+Date: Tue, 21 Jan 2025 00:50:18 +0300
+Subject: [PATCH 054/136] arm64: dts: qcom: sm7325-nothing-spacewar: Enable
+ CAMSS
+
+Signed-off-by: Danila Tikhonov <danila@jiaxyga.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index 7db9ae1c3cef..eb5f6bfe45db 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -831,6 +831,13 @@ vreg_bob: bob {
+ 	};
+ };
+ 
++&camss {
++	vdda-phy-supply = <&vreg_l10c_0p88>;
++	vdda-pll-supply = <&vreg_l6b_1p2>;
++
++	status = "okay";
++};
++
+ &cci0 {
+ 	/*
+ 	 * cci0_i2c1 bus is unused and GPIO 71&72 are repurposed.
+-- 
+2.55.0
+

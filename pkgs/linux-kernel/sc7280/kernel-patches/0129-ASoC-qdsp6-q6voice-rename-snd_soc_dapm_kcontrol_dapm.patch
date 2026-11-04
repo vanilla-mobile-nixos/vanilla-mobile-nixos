@@ -1,0 +1,41 @@
+From f11c690fa42753deeea3407f2c7389cc3e6bc826 Mon Sep 17 00:00:00 2001
+From: Richard Acayan <mailingradian@gmail.com>
+Date: Mon, 27 Apr 2026 19:22:54 -0400
+Subject: [PATCH 129/136] ASoC: qdsp6: q6voice: rename
+ snd_soc_dapm_kcontrol_dapm() to snd_soc_kcontrol_to_dapm()
+
+The name of the function changed upstream in commit 253204186530 ("ASoC:
+soc-dapm: rename snd_soc_dapm_kcontrol_dapm() to
+snd_soc_dapm_kcontrol_to_dapm()").
+
+Signed-off-by: Richard Acayan <mailingradian@gmail.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/qcom/qdsp6/q6voice-dai.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/qcom/qdsp6/q6voice-dai.c b/sound/soc/qcom/qdsp6/q6voice-dai.c
+index 0da168ffd58a..f1ca597b3fd1 100644
+--- a/sound/soc/qcom/qdsp6/q6voice-dai.c
++++ b/sound/soc/qcom/qdsp6/q6voice-dai.c
+@@ -127,7 +127,7 @@ static int q6voice_dai_open(struct snd_soc_component *component,
+ 
+ static int q6voice_get_mixer(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol, bool capture)
+ {
+-	struct snd_soc_dapm_context *dapm = snd_soc_dapm_kcontrol_dapm(kcontrol);
++	struct snd_soc_dapm_context *dapm = snd_soc_dapm_kcontrol_to_dapm(kcontrol);
+ 	struct snd_soc_component *c = snd_soc_dapm_to_component(dapm);
+ 	struct soc_mixer_control *mc =
+ 		(struct soc_mixer_control *)kcontrol->private_value;
+@@ -146,7 +146,7 @@ static int q6voice_get_mixer(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_
+ 
+ static int q6voice_put_mixer(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol, bool capture)
+ {
+-	struct snd_soc_dapm_context *dapm = snd_soc_dapm_kcontrol_dapm(kcontrol);
++	struct snd_soc_dapm_context *dapm = snd_soc_dapm_kcontrol_to_dapm(kcontrol);
+ 	struct snd_soc_component *c = snd_soc_dapm_to_component(dapm);
+ 	struct soc_mixer_control *mc =
+ 		(struct soc_mixer_control *)kcontrol->private_value;
+-- 
+2.55.0
+

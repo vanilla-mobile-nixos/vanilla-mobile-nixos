@@ -1,0 +1,32 @@
+From ae3e4511d8ecf309a5642540892150f246d075d8 Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Fri, 16 Oct 2026 04:31:52 -0300
+Subject: [PATCH 009/136] FROMGIT ASoC: qcom: sm8250: Add motorola-dubai
+ soundcard compatible
+
+Add a compatible for the SM7325-based Motorola Edge 30 which can use this
+machine driver.
+
+Signed-off-by: Val Packett <val@packett.cool>
+Link: https://patch.msgid.link/20261016073157.611956-5-val@packett.cool
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/qcom/sm8250.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 2d49b04cb1f6..5866f1f34b3d 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -215,6 +215,7 @@ static int sm8250_platform_probe(struct platform_device *pdev)
+ static const struct of_device_id snd_sm8250_dt_match[] = {
+ 	{ .compatible = "fairphone,fp4-sndcard", .data = "sm7225" },
+ 	{ .compatible = "fairphone,fp5-sndcard", .data = "qcm6490" },
++	{ .compatible = "motorola,dubai-sndcard", .data = "sm7325" },
+ 	{ .compatible = "qcom,qrb2210-sndcard", .data = "qcm2290" },
+ 	{ .compatible = "qcom,qrb4210-rb2-sndcard", .data = "sm4250" },
+ 	{ .compatible = "qcom,qrb5165-rb5-sndcard", .data = "sm8250" },
+-- 
+2.55.0
+

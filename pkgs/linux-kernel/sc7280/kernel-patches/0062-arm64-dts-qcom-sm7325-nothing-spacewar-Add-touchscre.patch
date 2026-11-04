@@ -1,0 +1,79 @@
+From c72514890a565a166774b827e094b19f66c31e3c Mon Sep 17 00:00:00 2001
+From: Eugene Lepshy <fekz115@gmail.com>
+Date: Thu, 11 Jan 2024 14:51:47 +0300
+Subject: [PATCH 062/136] arm64: dts: qcom: sm7325-nothing-spacewar: Add
+ touchscreen support
+
+Signed-off-by: Eugene Lepshy <fekz115@gmail.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-nothing-spacewar.dts | 46 ++++++++++++++++++-
+ 1 file changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index 6bcd4a75f9e2..61b5f646482e 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -1413,7 +1413,37 @@ platform {
+ &spi13 {
+ 	status = "okay";
+ 
+-	/* focaltech,ft3680 (Touchscreen) @ 0 */
++	focaltech@0 {
++		compatible = "focaltech,fts_ts";
++		reg = <0x0>;
++
++		spi-max-frequency = <6000000>;
++
++		interrupt-parent = <&tlmm>;
++		interrupts = <81 0x2008>;
++		reset-gpios = <&tlmm 105 GPIO_ACTIVE_HIGH>;
++		focaltech,irq-gpio = <&tlmm 81 0x2008>;
++		focaltech,display-coords = <0 0 1080 2400>;
++		focaltech,max-touch-number = <10>;
++		focaltech,ic-type = <0x3658d488>;
++
++		vdd-supply = <&vdd_ts>;
++		iovdd-supply = <&vreg_l8c_1p8>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&ts_int_n>,
++			    <&ts_reset_n>;
++
++		focaltech,trusted-touch-mode = "vm_mode";
++		focaltech,touch-environment = "pvm";
++		focaltech,trusted-touch-spi-irq = <601>;
++		focaltech,trusted-touch-io-bases = <0xf134000 0xf135000
++						    0xf136000 0xf137000
++						    0xf169000 0xf151000
++						    0xa94000 0x00a10000>;
++		focaltech,trusted-touch-io-sizes = <0x1000 0x1000 0x1000 0x1000
++						    0x1000 0x1000 0x1000 0x4000>;
++	};
+ };
+ 
+ &tlmm {
+@@ -1551,6 +1581,20 @@ pri_mi2s_sleep: pri-mi2s-sleep-state {
+ 		drive-strength = <2>;
+ 		bias-pull-down;
+ 	};
++
++	ts_int_n: ts-int-n-state {
++		pins = "gpio81";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-pull-up;
++	};
++
++	ts_reset_n: ts-reset-n-state {
++		pins = "gpio105";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-pull-up;
++	};
+ };
+ 
+ &uart5 {
+-- 
+2.55.0
+

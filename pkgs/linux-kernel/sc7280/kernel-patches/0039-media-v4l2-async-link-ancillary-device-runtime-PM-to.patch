@@ -1,0 +1,90 @@
+From 51b2d37239edb81f2c6eec56b9ca8407c1e99552 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?C=C3=A9dric=20Bellegarde?= <cedric.bellegarde@adishatz.org>
+Date: Tue, 22 Sep 2026 21:39:12 +0200
+Subject: [PATCH 039/136] media: v4l2-async: link ancillary device runtime PM
+ to the sensor's
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When a sensor's fwnode references an ancillary lens or flash device
+(e.g. via the "lens-focus" or "flash-leds" properties),
+v4l2_async_create_ancillary_links() already creates a media controller
+link between the two entities, but their runtime PM states remain
+independent.
+
+This is a problem for devices such as VCM lens actuators, which are
+typically spring-loaded: holding a position away from the spring's
+rest point requires continuous power, and the position is not retained
+once power is cut. If such an actuator is allowed to runtime-suspend
+independently of the sensor, the lens can drift back to its rest
+position during an otherwise active capture session.
+
+Add V4L2_SUBDEV_FL_PM_LINK to allow an ancillary subdevice to request
+that its runtime PM state be linked to the associated sensor.
+
+Signed-off-by: Cédric Bellegarde <cedric.bellegarde@adishatz.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/media/v4l2-core/v4l2-async.c | 18 ++++++++++++++----
+ include/media/v4l2-subdev.h          |  7 +++++++
+ 2 files changed, 21 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/v4l2-core/v4l2-async.c b/drivers/media/v4l2-core/v4l2-async.c
+index 460bf3dbbb88..22df627153b8 100644
+--- a/drivers/media/v4l2-core/v4l2-async.c
++++ b/drivers/media/v4l2-core/v4l2-async.c
+@@ -318,6 +318,7 @@ static int v4l2_async_create_ancillary_links(struct v4l2_async_notifier *n,
+ {
+ #if IS_ENABLED(CONFIG_MEDIA_CONTROLLER)
+ 	struct media_link *link;
++	struct device_link *devlink;
+ 
+ 	if (sd->entity.function != MEDIA_ENT_F_LENS &&
+ 	    sd->entity.function != MEDIA_ENT_F_FLASH)
+@@ -331,11 +332,20 @@ static int v4l2_async_create_ancillary_links(struct v4l2_async_notifier *n,
+ 	}
+ 
+ 	link = media_create_ancillary_link(&n->sd->entity, &sd->entity);
+-
+-	return IS_ERR(link) ? PTR_ERR(link) : 0;
+-#else
+-	return 0;
++	if (IS_ERR(link))
++		return PTR_ERR(link);
++
++	if (sd->flags & V4L2_SUBDEV_FL_PM_LINK) {
++		devlink = device_link_add(n->sd->dev, sd->dev,
++					  DL_FLAG_PM_RUNTIME |
++					  DL_FLAG_AUTOREMOVE_CONSUMER);
++		if (!devlink)
++			dev_warn(notifier_dev(n),
++				 "failed to link power management of %s to %s\n",
++				 dev_name(sd->dev), dev_name(n->sd->dev));
++	}
+ #endif
++	return 0;
+ }
+ 
+ static int v4l2_async_match_notify(struct v4l2_async_notifier *notifier,
+diff --git a/include/media/v4l2-subdev.h b/include/media/v4l2-subdev.h
+index d256b7ec8f84..9f64b10afd10 100644
+--- a/include/media/v4l2-subdev.h
++++ b/include/media/v4l2-subdev.h
+@@ -972,6 +972,13 @@ struct v4l2_subdev_internal_ops {
+  * - Multiple streams per pad are supported
+  */
+ #define V4L2_SUBDEV_FL_STREAMS			(1U << 4)
++/*
++ * Set this flag to keep the subdevice active while its associated sensor is active.
++ *
++ * This is intended for ancillary devices, such as lens actuators, whose
++ * hardware state or physical position cannot be retained while powered off.
++ */
++#define V4L2_SUBDEV_FL_PM_LINK          (1U << 5)
+ 
+ struct regulator_bulk_data;
+ 
+-- 
+2.55.0
+

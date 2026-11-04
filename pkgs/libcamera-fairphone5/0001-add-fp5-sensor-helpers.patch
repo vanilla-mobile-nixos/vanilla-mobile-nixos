@@ -1,0 +1,45 @@
+--- a/src/ipa/libipa/camera_sensor_helper.cpp	2026-07-30 08:02:00.128855664 +0200
++++ b/src/ipa/libipa/camera_sensor_helper.cpp	2026-07-30 08:02:16.345115694 +0200
+@@ -665,6 +665,19 @@
+ };
+ REGISTER_CAMERA_SENSOR_HELPER("imx708", CameraSensorHelperImx708)
+ 
++class CameraSensorHelperImx858 : public CameraSensorHelper
++{
++public:
++	CameraSensorHelperImx858()
++	{
++		/* 12-bit sensor, black level from tuning data. */
++		blackLevel_ = 4096;
++		/* Analogue gain register 0..978, gain = 1024 / (1024 - code). */
++		gain_ = AnalogueGainLinear{ 0, 1024, -1, 1024 };
++	}
++};
++REGISTER_CAMERA_SENSOR_HELPER("imx858", CameraSensorHelperImx858)
++
+ class CameraSensorHelperOv01a10 : public CameraSensorHelper
+ {
+ public:
+@@ -827,6 +840,22 @@
+ };
+ REGISTER_CAMERA_SENSOR_HELPER("ov13858", CameraSensorHelperOv13858)
+ 
++class CameraSensorHelperS5kjn1 : public CameraSensorHelper
++{
++public:
++	CameraSensorHelperS5kjn1()
++	{
++		/* 12-bit sensor, black level from tuning data. */
++		blackLevel_ = 4096;
++		/*
++		 * Analogue gain control is the real gain multiplier (1..64);
++		 * the driver writes code << 5 to the x32 gain register.
++		 */
++		gain_ = AnalogueGainLinear{ 1, 0, 0, 1 };
++	}
++};
++REGISTER_CAMERA_SENSOR_HELPER("s5kjn1", CameraSensorHelperS5kjn1)
++
+ class CameraSensorHelperVd55g1 : public CameraSensorHelper
+ {
+ public:
