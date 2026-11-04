@@ -76,8 +76,8 @@ stdenv.mkDerivation (finalAttrs: {
         version = "0-unstable-2025-04-14";
 
         src = fetchFromGitLab {
-          domain = "gitlab.postmarketos.org";
-          owner = "postmarketOS";
+          domain = "gitlab.nura.eco";
+          owner = "nura";
           repo = "pmaports";
           rev = "97d87482ba52b87c2f01827cd64731996d7ffbac";
           sparseCheckout = [ "temp/usb-moded" ];

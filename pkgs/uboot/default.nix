@@ -1,6 +1,6 @@
-# See <https://gitlab.postmarketos.org/tauchgang/tauchgang-ci/-/blob/main/devices.toml>
+# See <https://gitlab.nura.eco/tauchgang/tauchgang-ci/-/blob/main/devices.toml>
 # for the information needed to add most new devices.
-# Reference <https://gitlab.postmarketos.org/tauchgang/tauchgang-ci/-/blob/main/common.sh>
+# Reference <https://gitlab.nura.eco/tauchgang/tauchgang-ci/-/blob/main/common.sh>
 # if a new image building utility needs to be made.
 {
   lib,

@@ -27,7 +27,7 @@ been done on U-Boot to allow going from the Android bootloader to a UEFI environ
 
 The main thing that's needed for most devices is U-Boot and kernel/drivers support.
 Below is a list of what's already in this repository. For other devices, start with
-looking at the [Nura Wiki](https://wiki.nura.eco/wiki/Devices) and [this](https://gitlab.postmarketos.org/tauchgang/tauchgang-ci/-/blob/main/devices.toml)
+looking at the [Nura Wiki](https://wiki.nura.eco/wiki/Devices) and [this](https://gitlab.nura.eco/tauchgang/tauchgang-ci/-/blob/main/devices.toml)
 list of devices supported by Tauchgang U-Boot.
 Many of the devices that work best for mobile Linux are older devices you can buy
 secondhand.

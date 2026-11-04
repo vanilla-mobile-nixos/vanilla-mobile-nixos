@@ -44,7 +44,7 @@ in
       ];
       initrd = {
         # Based on
-        # <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/f4ca5fb76c589661efec611f92b8365925623985/device/community/device-oneplus-enchilada/modules-initfs>
+        # <https://gitlab.nura.eco/nura/pmaports/-/blob/f4ca5fb76c589661efec611f92b8365925623985/device/community/device-oneplus-enchilada/modules-initfs>
         kernelModules = [
           "i2c_qcom_geni"
           "rmi_core"

@@ -58,7 +58,7 @@ in
         };
         security.rtkit.enable = lib.mkDefault true;
 
-        # See <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/main/device/community/soc-qcom/51-qcom.conf>.
+        # See <https://gitlab.nura.eco/nura/pmaports/-/blob/main/device/community/soc-qcom/51-qcom.conf>.
         services.pipewire.wireplumber.extraConfig."51-qcom" = {
           "monitor.alsa.rules" = [
             {

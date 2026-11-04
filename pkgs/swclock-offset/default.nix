@@ -10,8 +10,8 @@ stdenv.mkDerivation (finalAttrs: {
   version = "0.3.0";
 
   src = fetchFromGitLab {
-    domain = "gitlab.postmarketos.org";
-    owner = "postmarketOS";
+    domain = "gitlab.nura.eco";
+    owner = "nura";
     repo = "swclock-offset";
     rev = finalAttrs.version;
     hash = "sha256-4iVSua0UJuom0QxZNVUHo8lD3Pcke6CoHIozaG9JO3c=";
@@ -37,7 +37,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   meta = {
     description = "Save/load real-time clock (RTC) offset for devices with a non-writable RTC";
-    homepage = "https://gitlab.postmarketos.org/postmarketOS/swclock-offset";
+    homepage = "https://gitlab.nura.eco/nura/swclock-offset";
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;

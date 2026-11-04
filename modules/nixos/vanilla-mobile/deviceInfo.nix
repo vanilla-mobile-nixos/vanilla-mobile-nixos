@@ -3,8 +3,8 @@
   ...
 }:
 {
-  # Most of this information can be found in postmarketOS `deviceinfo` files.
-  # Example: <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/main/device/community/device-xiaomi-beryllium/deviceinfo>
+  # Most of this information can be found in Nura `deviceinfo` files.
+  # Example: <https://gitlab.nura.eco/nura/pmaports/-/blob/main/device/community/device-xiaomi-beryllium/deviceinfo>
   options.vanilla-mobile.deviceInfo = {
     name = lib.mkOption {
       type = lib.types.str;
@@ -25,7 +25,7 @@
       example = "qcom/sdm845-xiaomi-beryllium-tianma";
       description = "Name of the device tree blob file";
     };
-    # `rootfs_image_sector_size` in postmarketOS
+    # `rootfs_image_sector_size` in Nura
     imageSectorSize = lib.mkOption {
       type = lib.types.int;
       default = 512;

@@ -13,8 +13,8 @@ python3Packages.buildPythonApplication (finalAttrs: {
   pyproject = false;
 
   src = fetchFromGitLab {
-    domain = "gitlab.postmarketos.org";
-    owner = "postmarketOS";
+    domain = "gitlab.nura.eco";
+    owner = "nura";
     repo = "usb-moded-notify";
     rev = finalAttrs.version;
     hash = "sha256-/joXgLpm3Pzm0f5A+f3MOwgur4QWw8CvJOh9oWRptZE=";
@@ -51,7 +51,7 @@ python3Packages.buildPythonApplication (finalAttrs: {
 
   meta = {
     description = "Handle usb-moded dialog events/switch modes using desktop notifications";
-    homepage = "https://gitlab.postmarketos.org/postmarketOS/usb-moded-notify";
+    homepage = "https://gitlab.nura.eco/nura/usb-moded-notify";
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [ junestepp ];
     platforms = lib.platforms.linux;

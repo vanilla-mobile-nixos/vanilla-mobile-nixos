@@ -53,8 +53,8 @@ stdenv.mkDerivation (finalAttrs: {
         version = "0-unstable-2025-10-12";
 
         src = fetchFromGitLab {
-          domain = "gitlab.postmarketos.org";
-          owner = "postmarketOS";
+          domain = "gitlab.nura.eco";
+          owner = "nura";
           repo = "pmaports";
           rev = "0007041862d959b66578a44bfe179d3d8bc696b3";
           sparseCheckout = [ "main/dtbtool-exynos" ];

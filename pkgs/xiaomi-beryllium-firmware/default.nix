@@ -20,7 +20,7 @@ stdenvNoCC.mkDerivation {
     # Used by `iio-sensor-proxy`.
     (fetchpatch {
       name = "set-mount-matrix.patch";
-      url = "https://gitlab.postmarketos.org/postmarketOS/pmaports/-/raw/f6f36733515651179905cd94b903ff0f19b41291/device/community/firmware-xiaomi-beryllium/mount-matrix.patch?inline=false";
+      url = "https://gitlab.nura.eco/nura/pmaports/-/raw/f6f36733515651179905cd94b903ff0f19b41291/device/community/firmware-xiaomi-beryllium/mount-matrix.patch?inline=false";
       hash = "sha256-Yf9dETw8geWjwyuyM0Y7c8A+YDAsNGNtcA8kruh9BDw=";
     })
   ];

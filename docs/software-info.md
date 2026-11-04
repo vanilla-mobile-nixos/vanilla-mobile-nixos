@@ -7,7 +7,7 @@ The first choice is what desktop environment to use:
 
 ## Desktop Environments
 
-See [here](https://wiki.postmarketos.org/wiki/Category:Interface#Mobile_phones) for an
+See [here](https://wiki.nura.eco/wiki/Category:Interface#Mobile_phones) for an
 overview with pictures of what mobile specific desktop environments are available.
 If you prefer standalone compositors (like I do) and/or want to keep the one you
 use on Desktop, don't worry! This repository has detailed examples for Hyprland and
@@ -105,7 +105,7 @@ possible to use a mobile customized Firefox. See [Firefox](#firefox).
 
 #### Firefox
 
-Firefox works great on mobile with a few changes from the [mobile-config-firefox](https://gitlab.postmarketos.org/postmarketOS/mobile-config-firefox) project.
+Firefox works great on mobile with a few changes from the [mobile-config-firefox](https://gitlab.nura.eco/nura/mobile-config-firefox) project.
 You can easily add this to your existing NixOS or Home Manager Firefox or Librewolf config
 with `vanilla-mobile.mobile-config-firefox.enable = true;`.
 With this enabled, you should use `vanilla-mobile.mobile-config.firefox.firefoxPackage`

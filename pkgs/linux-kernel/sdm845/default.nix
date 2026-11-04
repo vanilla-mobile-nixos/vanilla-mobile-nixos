@@ -106,7 +106,7 @@ kernel.override {
     # This introduces some weird race conditions. Stick to the
     # userspace one for now (6.13). still seem to happen in 7.1rc1.
     # makes mic not working in poco f1. no idea why.
-    # See <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/work_items/3481>.
+    # See <https://gitlab.nura.eco/nura/pmaports/-/work_items/3481>.
     # I don't use the mic right now, so I'd rather not have to set
     # up the userspace pd_mmapper.
     # QCOM_PD_MAPPER = no;

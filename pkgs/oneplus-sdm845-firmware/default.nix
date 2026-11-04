@@ -20,7 +20,7 @@ stdenvNoCC.mkDerivation {
     # See <https://gitlab.com/sdm845-mainline/firmware-oneplus-sdm845/-/merge_requests/3>.
     (fetchpatch {
       name = "0001-oneplus6-set-mount-matrix.patch";
-      url = "https://gitlab.postmarketos.org/postmarketOS/pmaports/-/raw/1b853b79baecb837f53504a5bc947d3130bcaaa6/device/community/firmware-oneplus-sdm845/0001-oneplus6-set-mount-matrix.patch?inline=false";
+      url = "https://gitlab.nura.eco/nura/pmaports/-/raw/1b853b79baecb837f53504a5bc947d3130bcaaa6/device/community/firmware-oneplus-sdm845/0001-oneplus6-set-mount-matrix.patch?inline=false";
       hash = "sha256-kuxEve7dTBH78ojp02P5RECSnitf8Ns6/DR1ikCLuJo=";
     })
   ];

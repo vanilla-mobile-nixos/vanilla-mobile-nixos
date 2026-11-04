@@ -18,7 +18,7 @@
       version = "2026.07-rc1";
 
       src = fetchFromGitLab {
-        domain = "gitlab.postmarketos.org";
+        domain = "gitlab.nura.eco";
         owner = "tauchgang";
         repo = "u-boot";
         rev = "1f56592576887ffcae0e7d44c66b5cf030674908";

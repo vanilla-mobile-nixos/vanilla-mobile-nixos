@@ -50,7 +50,7 @@ in
       ];
       initrd = {
         # Based on
-        # <https://gitlab.postmarketos.org/postmarketOS/pmaports/-/blob/master/device/community/device-xiaomi-beryllium/modules-initfs.tianma>
+        # <https://gitlab.nura.eco/nura/pmaports/-/blob/master/device/community/device-xiaomi-beryllium/modules-initfs.tianma>
         kernelModules = [
           "gpi"
           "i2c_qcom_geni"
