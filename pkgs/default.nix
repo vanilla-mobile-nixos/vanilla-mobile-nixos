@@ -16,6 +16,7 @@ in
   oneplus-sdm845-firmware = callPackage ./oneplus-sdm845-firmware { };
 
   alsa-ucm-conf-sdm845 = callPackage ./alsa-ucm-conf-sdm845 { };
+  alsa-ucm-conf-sm8250 = callPackage ./alsa-ucm-conf-sm8250 { };
 
   unudhcpd = callPackage ./unudhcpd { };
   hexagonrpc = callPackage ./hexagonrpc { inherit (pkgs) hexagonrpc; };
