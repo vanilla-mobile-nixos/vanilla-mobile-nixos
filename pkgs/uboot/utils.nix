@@ -25,6 +25,23 @@
         hash = "sha256-A6AombRRnUaHkn7Fn7p6tkAEYnA+Z4vaJliRVB0hKuo=";
       };
 
+      prePatch = ''
+        DTS_DIR=dts/upstream/src/arm64/qcom
+
+        mkdir -p "$DTS_DIR"
+
+
+        cp ${./sm8250-oneplus-common.dtsi} \
+          "$DTS_DIR/sm8250-oneplus-common.dtsi"
+        patch -p1 < ${./dtsi.patch}
+
+        cp ${./sm8250-oneplus-kebab.dts} \
+          "$DTS_DIR/sm8250-oneplus-kebab.dts"
+        #cp -f ./qcom-phone.env board/qualcomm/qcom-phone.env
+
+        chmod -R u+w "$DTS_DIR"
+      '';
+
       defconfig = "${defconfig} tauchgang.config";
       extraConfig = ''
         CONFIG_DEFAULT_DEVICE_TREE="${dtb}"

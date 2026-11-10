@@ -1,0 +1,272 @@
+// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
+/*
+ * Copyright (c) 2026, The Linux Foundation.
+ */
+
+#include "sm8250-oneplus-common.dtsi"
+
+/ {
+	model = "OnePlus 8T";
+	compatible = "oneplus,kebab", "qcom,sm8250", "qcom,kona";
+};
+
+&adsp {
+	firmware-name = "qcom/sm8250/OnePlus/kebab/adsp.mbn";
+
+	status = "okay";
+};
+
+&battery {
+	charge-full-design-microamp-hours = <4500000>;
+	energy-full-design-microwatt-hours = <19575000>;
+	voltage-max-design-microvolt = <4350000>;
+};
+
+&cdsp {
+	firmware-name = "qcom/sm8250/OnePlus/kebab/cdsp.mbn";
+
+	status = "okay";
+};
+
+&display_panel {
+	compatible = "samsung,amb655x";
+
+	width-mm = <70>;
+	height-mm = <151>;
+
+	status = "okay";
+};
+
+&framebuffer {
+	width = <1080>;
+	height = <2400>;
+	stride = <(1080 * 4)>;
+};
+
+&gpu_zap_shader {
+	firmware-name = "qcom/sm8250/OnePlus/kebab/a650_zap.mbn";
+};
+
+&i2c2 {
+	pm8008: pmic@8 {
+		compatible = "qcom,pm8008";
+		reg = <0x8>;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <112 IRQ_TYPE_EDGE_RISING>;
+
+		reset-gpios = <&tlmm 93 GPIO_ACTIVE_LOW>;
+
+		vdd-l1-l2-supply = <&vreg_s8c_1p3>;
+		vdd-l3-l4-supply = <&vreg_bob>;
+		vdd-l5-supply = <&vreg_bob>;
+		vdd-l6-supply = <&vreg_bob>;
+		vdd-l7-supply = <&vreg_bob>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&pm8008 0 0 2>;
+
+		interrupt-controller;
+		#interrupt-cells = <2>;
+
+		#thermal-sensor-cells = <0>;
+
+		pinctrl {
+			gpio-keys-state {
+				pins = "gpio1";
+				function = "normal";
+			};
+		};
+
+		regulators {
+			ldo1 {
+				regulator-name = "vreg_l1p";
+				regulator-min-microvolt = <528000>;
+				regulator-max-microvolt = <1504000>;
+			};
+
+			ldo2 {
+				regulator-name = "vreg_l2p";
+				regulator-min-microvolt = <528000>;
+				regulator-max-microvolt = <1300000>;
+			};
+
+			ldo3 {
+				regulator-name = "vreg_l3p";
+				regulator-min-microvolt = <1500000>;
+				regulator-max-microvolt = <3400000>;
+			};
+
+			ldo4 {
+				regulator-name = "vreg_l4p";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+			};
+
+			ldo5 {
+				regulator-name = "vreg_l5p";
+				regulator-min-microvolt = <1500000>;
+				regulator-max-microvolt = <3400000>;
+			};
+
+			ldo6 {
+				regulator-name = "vreg_l6p";
+				regulator-min-microvolt = <1500000>;
+				regulator-max-microvolt = <3400000>;
+			};
+
+			ldo7 {
+				regulator-name = "vreg_l7p";
+				regulator-min-microvolt = <1500000>;
+				regulator-max-microvolt = <3400000>;
+			};
+		};
+	};
+};
+
+&i2c13 {
+	clock-frequency = <400000>;
+
+	status = "okay";
+
+	touchscreen@4b {
+		compatible = "syna,s3908";
+		reg = <0x4b>;
+		interrupts-extended = <&tlmm 39 IRQ_TYPE_LEVEL_LOW>;
+		reset-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+		vdd-supply = <&vreg_l13a_ts_3p0>;
+		vcc-supply = <&vreg_l1c_1p8>;
+		pinctrl-0 = <&ts_int_default>;
+		pinctrl-1 = <&ts_rst_suspend>;
+		pinctrl-names = "default";
+	};
+};
+
+&i2c16 {
+	status = "okay";
+
+	fuel-gauge@55 {
+		compatible = "ti,bq28z610";
+		reg = <0x55>;
+		monitored-battery = <&battery>;
+	};
+};
+
+&panel_vout_default {
+	pins = "gpio24";
+};
+
+&panel_vout_suspend {
+	pins = "gpio24";
+};
+
+&qca6390_pmu {
+	vddpmu-supply = <&vreg_s6a_0p95>;
+	vddrfa0p95-supply = <&vreg_s6a_0p95>;
+};
+
+&qca639x {
+	vddpmu-supply = <&vreg_s6a_0p95>;
+	vddrfa1-supply = <&vreg_s6a_0p95>;
+};
+
+&slpi {
+	firmware-name = "qcom/sm8250/OnePlus/kebab/slpi.mbn";
+
+	status = "okay";
+};
+
+&tlmm {
+	pm8008_default: pm8008-default-state {
+		pins = "gpio93";
+		function = "gpio";
+		bias-pull-up;
+		output-high;
+		drive-strength = <2>;
+	};
+};
+
+&sound {
+	model = "OnePlus 8T";
+	audio-routing =
+		"AMIC2", "MIC BIAS2",
+		"TX DMIC0", "MIC BIAS1",
+		"TX DMIC1", "MIC BIAS1",
+		"TX DMIC2", "MIC BIAS4",
+		"TX DMIC3", "MIC BIAS3",
+		"TX DMIC4", "MIC BIAS4",
+		"TX DMIC5", "MIC BIAS4",
+		"DMIC1", "MIC BIAS1",
+		"DMIC2", "MIC BIAS1",
+		"DMIC3", "MIC BIAS3",
+		"DMIC4", "MIC BIAS3",
+		"DMIC5", "MIC BIAS4",
+		"DMIC6", "MIC BIAS4",
+		"IN1_HPHL", "HPHL_OUT",
+		"IN2_HPHR", "HPHR_OUT",
+		"IN3_AUX", "AUX_OUT",
+		"TX SWR_ADC0", "ADC1_OUTPUT",
+		"TX SWR_ADC1", "ADC2_OUTPUT",
+		"TX SWR_ADC2", "ADC3_OUTPUT",
+		"TX SWR_ADC3", "ADC4_OUTPUT",
+		"TX SWR_DMIC0", "DMIC1_OUTPUT",
+		"TX SWR_DMIC1", "DMIC2_OUTPUT",
+		"TX SWR_DMIC2", "DMIC3_OUTPUT",
+		"TX SWR_DMIC3", "DMIC4_OUTPUT",
+		"TX SWR_DMIC4", "DMIC5_OUTPUT",
+		"TX SWR_DMIC5", "DMIC6_OUTPUT",
+		"TX SWR_DMIC6", "DMIC7_OUTPUT",
+		"TX SWR_DMIC7", "DMIC8_OUTPUT",
+		"RX_TX DEC0_INP", "TX DEC0 MUX",
+		"RX_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC2_INP", "TX DEC2 MUX",
+		"RX_TX DEC3_INP", "TX DEC3 MUX",
+		"VA DMIC0", "VA MIC BIAS3",
+		"VA DMIC1", "VA MIC BIAS1",
+		"VA DMIC2", "VA MIC BIAS1",
+		"VA DMIC3", "VA MIC BIAS3",
+		"VA DMIC4", "VA MIC BIAS4",
+		"VA DMIC5", "VA MIC BIAS4",
+		"VA SWR_ADC0", "ADC1_OUTPUT",
+		"VA SWR_ADC1", "ADC2_OUTPUT",
+		"VA SWR_ADC2", "ADC3_OUTPUT",
+		"VA SWR_ADC3", "ADC4_OUTPUT",
+		"VA SWR_MIC0", "DMIC1_OUTPUT",
+		"VA SWR_MIC1", "DMIC2_OUTPUT",
+		"VA SWR_MIC2", "DMIC3_OUTPUT",
+		"VA SWR_MIC3", "DMIC4_OUTPUT",
+		"VA SWR_MIC4", "DMIC5_OUTPUT",
+		"VA SWR_MIC5", "DMIC6_OUTPUT",
+		"VA SWR_MIC6", "DMIC7_OUTPUT",
+		"VA SWR_MIC7", "DMIC8_OUTPUT";
+};
+
+&venus {
+	firmware-name = "qcom/sm8250/OnePlus/kebab/venus.mbn";
+
+	status = "okay";
+};
+
+&vreg_f {
+	status = "disabled";
+};
+
+&wcd938x {
+	qcom,hphl-jack-type-normally-closed;
+};
+
+&qca6390_pmu {
+	vddpmu-supply = <&vreg_s6a_0p95>;
+	vddrfa0p95-supply = <&vreg_s6a_0p95>;
+	qcom,calibration-variant = "OnePlus_8T";
+};
+
+&qca639x {
+	vddpmu-supply = <&vreg_s6a_0p95>;
+	vddrfa1-supply = <&vreg_s6a_0p95>;
+};
+
+&wlan0 {
+	qcom,calibration-variant = "OnePlus_8T";
+};
