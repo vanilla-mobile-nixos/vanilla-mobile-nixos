@@ -1,0 +1,24 @@
+--- a/dts/upstream/src/arm64/qcom/sm8250-oneplus-common.dtsi
++++ b/dts/upstream/src/arm64/qcom/sm8250-oneplus-common.dtsi
+@@ -1180,22 +1180,6 @@
+ 		};
+ 	};
+
+-	usb-dai-link {
+-		link-name = "USB Playback";
+-
+-		codec {
+-			sound-dai = <&q6usbdai USB_RX>;
+-		};
+-
+-		cpu {
+-			sound-dai = <&q6afedai USB_RX>;
+-		};
+-
+-		platform {
+-			sound-dai = <&q6routing>;
+-		};
+-	};
+-
+ 	va-dai-link {
+ 		link-name = "VA Capture";
