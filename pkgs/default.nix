@@ -8,6 +8,7 @@ in
   linuxKernels = recurseIntoAttrs (callPackage ./linux-kernel { });
 
   dtbtool-exynos = callPackage ./dtbtool-exynos { };
+  qca-swiss-army-knife = callPackage ./qca-swiss-army-knife {};
   ubootUtils = recurseIntoAttrs (callPackage ./uboot/utils.nix { });
   ubootPackages = recurseIntoAttrs (callPackage ./uboot { });
 
