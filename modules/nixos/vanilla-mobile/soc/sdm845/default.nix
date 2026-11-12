@@ -11,6 +11,7 @@ in
   imports = [
     (import ./xiaomi-beryllium.nix self)
     (import ./oneplus-enchilada.nix self)
+    (import ./oneplus-fajita.nix self)
   ];
 
   options.vanilla-mobile.soc.sdm845 = {

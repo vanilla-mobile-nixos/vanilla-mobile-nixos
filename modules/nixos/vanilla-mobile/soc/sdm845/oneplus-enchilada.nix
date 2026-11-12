@@ -26,13 +26,13 @@ in
 
     vanilla-mobile = {
       deviceInfo = {
-        name = "OnePlus 6";
-        codename = "oneplus-enchilada";
+        name = lib.mkDefault "OnePlus 6";
+        codename = lib.mkDefault "oneplus-enchilada";
         manufacturer = "OnePlus";
-        dtb = "qcom/sdm845-oneplus-enchilada.dtb";
+        dtb = lib.mkDefault "qcom/sdm845-oneplus-enchilada.dtb";
         imageSectorSize = 4096;
         firmware = self.packages.oneplus-sdm845-firmware;
-        uboot = self.packages.ubootPackages.oneplus-enchilada-boot-image;
+        uboot = lib.mkDefault self.packages.ubootPackages.oneplus-enchilada-boot-image;
       };
       soc.sdm845.enable = true;
     };
