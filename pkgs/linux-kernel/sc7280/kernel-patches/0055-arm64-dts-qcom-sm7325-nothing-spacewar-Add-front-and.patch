@@ -1,0 +1,151 @@
+From 73255fa944253a0eba21778336eb3273d2adfc62 Mon Sep 17 00:00:00 2001
+From: Danila Tikhonov <danila@jiaxyga.com>
+Date: Tue, 21 Jan 2025 01:06:18 +0300
+Subject: [PATCH 055/136] arm64: dts: qcom: sm7325-nothing-spacewar: Add front
+ and ultra wide CAMs
+
+Signed-off-by: Danila Tikhonov <danila@jiaxyga.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-nothing-spacewar.dts | 93 ++++++++++++++++++-
+ 1 file changed, 89 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index eb5f6bfe45db..c176b921db42 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -6,12 +6,11 @@
+ 
+ /dts-v1/;
+ 
+-#include <dt-bindings/arm/qcom,ids.h>
+-#include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/iio/qcom,spmi-adc7-pm7325.h>
+ #include <dt-bindings/iio/qcom,spmi-adc7-pm8350b.h>
+ #include <dt-bindings/iio/qcom,spmi-adc7-pmk8350.h>
+ #include <dt-bindings/leds/common.h>
++#include <dt-bindings/media/video-interfaces.h>
+ #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include <dt-bindings/sound/qcom,q6afe.h>
+@@ -836,6 +835,26 @@ &camss {
+ 	vdda-pll-supply = <&vreg_l6b_1p2>;
+ 
+ 	status = "okay";
++
++	ports {
++		port@0 {
++			csiphy0_ep: endpoint {
++				clock-lanes = <7>;
++				data-lanes = <0 1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				remote-endpoint = <&camera_imx471_ep>;
++			};
++		};
++
++		port@2 {
++			csiphy2_ep: endpoint {
++				clock-lanes = <7>;
++				data-lanes = <0 1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				remote-endpoint = <&camera_s5kjn1_ep>;
++			};
++		};
++	};
+ };
+ 
+ &cci0 {
+@@ -850,7 +869,32 @@ &cci0 {
+ };
+ 
+ &cci0_i2c0 {
+-	/* D-PHY sony,imx471 (Front) @ 0x1a */
++	camera@1a {
++		compatible = "sony,imx471";
++		reg = <0x1a>;
++
++		vddio-supply = <&vreg_cam_vio_1p8>;
++		vddd-supply = <&vreg_camf_vdig_1p1>;
++		vdda-supply = <&vreg_camf_vana_2p8>;
++
++		clocks = <&camcc CAM_CC_MCLK0_CLK>;
++		clock-frequency = <19200000>;
++
++		reset-gpios = <&tlmm 20 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&mclk0_active>;
++		pinctrl-names = "default";
++
++		orientation = <0>; /* Front facing */
++		rotation = <270>;
++
++		port {
++			camera_imx471_ep: endpoint {
++				data-lanes = <1 2 3 4>;
++				link-frequencies = /bits/ 64 <600000000>;
++				remote-endpoint = <&csiphy0_ep>;
++			};
++		};
++	};
+ 
+ 	camf_p24c64f: eeprom@52 {
+ 		compatible = "puya,p24c64f",
+@@ -867,7 +911,34 @@ &cci1 {
+ 
+ &cci1_i2c0 {
+ 	/* actuator (For Ultra Wide sensor) @ 0xc */
+-	/* D-PHY samsung,s5kjn1 (Ultra Wide) @ 0x2d */
++
++	camera@2d {
++		compatible = "samsung,s5kjn1";
++		reg = <0x2d>;
++
++		vddio-supply = <&vreg_cam_vio_1p8>;
++		vddd-supply = <&vreg_camu_vdig_1p1>;
++		vdda-supply = <&vreg_camu_vana_2p8>;
++
++		clocks = <&camcc CAM_CC_MCLK2_CLK>;
++		// clock-frequency = <19200000>; // FIXME invalid property - probably should get assigned-clock-rates
++
++		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&mclk2_active>;
++		pinctrl-names = "default";
++
++		orientation = <1>; /* Rear facing */
++		rotation = <90>;
++
++		port {
++			camera_s5kjn1_ep: endpoint {
++				data-lanes = <1 2 3 4>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				link-frequencies = /bits/ 64 <600000000>;
++				remote-endpoint = <&csiphy2_ep>;
++			};
++		};
++	};
+ 
+ 	camu_gt24p128e: eeprom@51 {
+ 		compatible = "giantec,gt24p128e",
+@@ -1348,6 +1419,20 @@ lcd_reset_n: lcd-reset-n-state {
+ 		bias-disable;
+ 	};
+ 
++	mclk0_active: mclk0-active-state {
++		pins = "gpio64";
++		function = "cam_mclk";
++		bias-disable;
++		drive-strength = <2>;
++	};
++
++	mclk2_active: mclk2-active-state {
++		pins = "gpio66";
++		function = "cam_mclk";
++		bias-disable;
++		drive-strength = <2>;
++	};
++
+ 	mdp_vsync_p: mdp-vsync-p-state {
+ 		pins = "gpio80";
+ 		function = "mdp_vsync";
+-- 
+2.55.0
+

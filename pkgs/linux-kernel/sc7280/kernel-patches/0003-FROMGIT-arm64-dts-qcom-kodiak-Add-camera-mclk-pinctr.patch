@@ -1,0 +1,82 @@
+From d2b966850a138751ee721b88fc33f08221ddbc11 Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 17 Jul 2026 15:19:33 +0200
+Subject: [PATCH 003/136] FROMGIT arm64: dts: qcom: kodiak: Add camera mclk
+ pinctrl definitions
+
+On different boards the cameras are connected to different pins with the
+cam_mclk function. Add the definitions so that mclk0-5 are covered.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Link: https://lore.kernel.org/r/20260717-kodiak-cam-mclk-v2-2-04451f1374bd@fairphone.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ arch/arm64/boot/dts/qcom/kodiak.dtsi | 35 ++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index 19dc655d2973..347815e5983e 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -6522,6 +6522,27 @@ qup_uart15_rx: qup-uart15-rx-state {
+ 				function = "qup17";
+ 			};
+ 
++			cam_mclk0_default: cam-mclk0-default-state {
++				pins = "gpio64";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
++			cam_mclk1_default: cam-mclk1-default-state {
++				pins = "gpio65";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
++			cam_mclk2_default: cam-mclk2-default-state {
++				pins = "gpio66";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
+ 			cam_mclk3_default: cam-mclk3-default-state {
+ 				pins = "gpio67";
+ 				function = "cam_mclk";
+@@ -6529,6 +6550,13 @@ cam_mclk3_default: cam-mclk3-default-state {
+ 				bias-disable;
+ 			};
+ 
++			cam_mclk4_default: cam-mclk4-default-state {
++				pins = "gpio68";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
+ 			cci0_default: cci0-default-state {
+ 				pins = "gpio69", "gpio70";
+ 				function = "cci_i2c";
+@@ -6595,6 +6623,13 @@ pcie0_clkreq_n: pcie0-clkreq-n-state {
+ 				function = "pcie0_clkreqn";
+ 			};
+ 
++			cam_mclk5_default: cam-mclk5-default-state {
++				pins = "gpio93";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
+ 			mi2s0_mclk: mi2s0-mclk-state {
+ 				pins = "gpio96";
+ 				function = "pri_mi2s";
+-- 
+2.55.0
+

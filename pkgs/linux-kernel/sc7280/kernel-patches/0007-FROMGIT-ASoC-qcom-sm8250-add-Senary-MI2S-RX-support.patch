@@ -1,0 +1,40 @@
+From 0b97ed42263339ca06919c18afc3e3f67590a196 Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Fri, 16 Oct 2026 04:31:50 -0300
+Subject: [PATCH 007/136] FROMGIT ASoC: qcom: sm8250: add Senary MI2S RX
+ support
+
+Add support for the SENARY_MI2S_RX DAI which is used on some devices to
+send audio data to speaker amplifiers.
+
+Reviewed-by: Srinivas Kandagatla <srinivas.kandagatla@oss.qualcomm.com>
+Signed-off-by: Val Packett <val@packett.cool>
+Link: https://patch.msgid.link/20261016073157.611956-3-val@packett.cool
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/qcom/sm8250.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/sound/soc/qcom/sm8250.c b/sound/soc/qcom/sm8250.c
+index 76dc3a3f4a31..2d49b04cb1f6 100644
+--- a/sound/soc/qcom/sm8250.c
++++ b/sound/soc/qcom/sm8250.c
+@@ -112,6 +112,14 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
+ 		snd_soc_dai_set_fmt(cpu_dai, fmt);
+ 		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
+ 		break;
++	case SENARY_MI2S_RX:
++		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
++		snd_soc_dai_set_sysclk(cpu_dai,
++			Q6AFE_LPASS_CLK_ID_SEN_MI2S_IBIT,
++			MI2S_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
++		snd_soc_dai_set_fmt(cpu_dai, fmt);
++		snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
++		break;
+ 	case LPI_MI2S_RX_0:
+ 		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
+ 		snd_soc_dai_set_sysclk(cpu_dai,
+-- 
+2.55.0
+

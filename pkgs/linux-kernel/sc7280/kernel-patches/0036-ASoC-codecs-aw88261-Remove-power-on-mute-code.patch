@@ -1,0 +1,48 @@
+From adefc412d81bfa0e05b38cf80ed64baa1c39f9f4 Mon Sep 17 00:00:00 2001
+From: Christian Duerr <contact@christianduerr.com>
+Date: Tue, 11 Aug 2026 01:57:37 +0200
+Subject: [PATCH 036/136] ASoC: codecs: aw88261: Remove power-on mute code
+
+This removes the code responsible for keeping the aw88261 audio muted
+until power-on, since it appears to be unnecessary and prevents the
+bottom speaker from muting during calls on the Fairphone 5.
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/codecs/aw88261.c | 13 +------------
+ 1 file changed, 1 insertion(+), 12 deletions(-)
+
+diff --git a/sound/soc/codecs/aw88261.c b/sound/soc/codecs/aw88261.c
+index 7303dc9eb4e0..a9694e512028 100644
+--- a/sound/soc/codecs/aw88261.c
++++ b/sound/soc/codecs/aw88261.c
+@@ -347,7 +347,6 @@ static int aw88261_dev_reg_update(struct aw88261 *aw88261,
+ 					unsigned char *data, unsigned int len)
+ {
+ 	struct aw_device *aw_dev = aw88261->aw_pa;
+-	struct aw_volume_desc *vol_desc = &aw_dev->volume_desc;
+ 	unsigned int read_val, efcheck_val, read_vol;
+ 	int data_len, i, ret;
+ 	int16_t *reg_data;
+@@ -418,17 +417,7 @@ static int aw88261_dev_reg_update(struct aw88261 *aw88261,
+ 			break;
+ 	}
+ 
+-	ret = aw88261_dev_set_vcalb(aw_dev);
+-	if (ret)
+-		return ret;
+-
+-	if (aw_dev->prof_cur != aw_dev->prof_index)
+-		vol_desc->ctl_volume = 0;
+-
+-	/* keep min volume */
+-	aw88261_dev_set_volume(aw_dev, vol_desc->mute_volume);
+-
+-	return ret;
++	return aw88261_dev_set_vcalb(aw_dev);
+ }
+ 
+ static int aw88261_dev_get_prof_name(struct aw_device *aw_dev, int index, char **prof_name)
+-- 
+2.55.0
+

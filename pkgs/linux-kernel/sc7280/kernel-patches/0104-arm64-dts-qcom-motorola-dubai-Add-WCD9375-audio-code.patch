@@ -1,0 +1,261 @@
+From bc575f7339198a1bfd011e77d460706e73c9d841 Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Wed, 6 May 2026 18:09:55 -0300
+Subject: [PATCH 104/136] arm64: dts: qcom: motorola-dubai: Add WCD9375 audio
+ codec [XXX]
+
+Signed-off-by: Val Packett <val@packett.cool>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../qcom/sm7325-motorola-dubai-common.dtsi    | 189 ++++++++++++++++++
+ 1 file changed, 189 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+index ecc4fedecdb0..0ab9af43200f 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm7325-motorola-dubai-common.dtsi
+@@ -16,6 +16,8 @@
+ #include <dt-bindings/leds/common.h>
+ #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
++#include <dt-bindings/sound/qcom,q6asm.h>
+ 
+ #include "sm7325.dtsi"
+ #include "pm7325.dtsi"
+@@ -33,6 +35,37 @@ aliases {
+ 		wifi0 = &wifi;
+ 	};
+ 
++	wcd9375: audio-codec {
++		compatible = "qcom,wcd9375-codec";
++
++		pinctrl-0 = <&wcd_reset_n>;
++		pinctrl-1 = <&wcd_reset_n_sleep>;
++		pinctrl-names = "default", "sleep";
++
++		reset-gpios = <&tlmm 83 GPIO_ACTIVE_LOW>;
++
++		vdd-rxtx-supply = <&vreg_l18b_1p8>;
++		vdd-io-supply = <&vreg_l18b_1p8>;
++		vdd-buck-supply = <&vreg_l17b_1p8>;
++		vdd-mic-bias-supply = <&vreg_bob>;
++		vdd-px-supply = <&vreg_l18b_1p8>;
++
++		qcom,micbias1-microvolt = <1800000>;
++		qcom,micbias2-microvolt = <2800000>;
++		qcom,micbias3-microvolt = <1800000>;
++		qcom,micbias4-microvolt = <1800000>;
++
++		qcom,mbhc-buttons-vthreshold-microvolt = <75000 150000 237000 500000 500000
++							  500000 500000 500000>;
++		qcom,mbhc-headset-vthreshold-microvolt = <1700000>;
++		qcom,mbhc-headphone-vthreshold-microvolt = <50000>; // 4000?
++
++		qcom,rx-device = <&wcd937x_rx>;
++		qcom,tx-device = <&wcd937x_tx>;
++
++		#sound-dai-cells = <1>;
++	};
++
+ 	cam_avdd0_2p8: avdd0-2p8-regulator {
+ 		compatible = "regulator-fixed";
+ 
+@@ -887,6 +920,28 @@ &ipa {
+ 	status = "okay";
+ };
+ 
++&lpass_audiocc {
++	compatible = "qcom,qcm6490-lpassaudiocc";
++	/delete-property/ power-domains;
++};
++
++&lpass_rx_macro {
++	status = "okay";
++};
++
++&lpass_tx_macro {
++	status = "okay";
++};
++
++&lpass_va_macro {
++	vdd-micb-supply = <&vreg_bob>;
++
++	/* No DMIC used */
++	qcom,dmic-sample-rate = <4800000>;
++
++	status = "okay";
++};
++
+ &mdss {
+ 	status = "okay";
+ };
+@@ -1167,6 +1222,12 @@ &pon_resin {
+ 	status = "okay";
+ };
+ 
++&q6asmdai {
++	dai@0 {
++		reg = <MSM_FRONTEND_DAI_MULTIMEDIA1>;
++	};
++};
++
+ &qfprom {
+ 	vcc-supply = <&vdd_qfprom>;
+ };
+@@ -1261,6 +1322,81 @@ &rmtfs_mem {
+ 		    <QCOM_SCM_VMID_NAV>;
+ };
+ 
++&sound {
++	compatible = "motorola,dubai-sndcard";
++	model = "Motorola-dubai";
++
++	pinctrl-0 = <&lpass_i2s2_active>;
++	pinctrl-1 = <&lpass_i2s2_sleep>;
++	pinctrl-names = "default",
++			"sleep";
++
++	audio-routing = /*"IN1_HPHL", "HPHL_OUT",
++			"IN2_HPHR", "HPHR_OUT",*/
++			"AMIC1", "MIC BIAS1",
++			"AMIC2", "MIC BIAS2",
++			"AMIC3", "MIC BIAS3",
++			"TX SWR_INPUT0", "ADC1_OUTPUT",
++			"TX SWR_INPUT4", "ADC2_OUTPUT",
++			"TX SWR_INPUT5", "ADC3_OUTPUT";
++
++	mm1-dai-link {
++		link-name = "MultiMedia1";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
++		};
++	};
++
++	mm2-dai-link {
++		link-name = "MultiMedia2";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
++		};
++	};
++
++	mm3-dai-link {
++		link-name = "MultiMedia3";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
++		};
++	};
++
++	usb-dai-link {
++		link-name = "USB Playback";
++
++		codec {
++			sound-dai = <&q6usbdai USB_RX>;
++		};
++
++		cpu {
++			sound-dai = <&q6afedai USB_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++	};
++
++	wcd-capture-dai-link {
++		link-name = "WCD Capture";
++
++		cpu {
++			sound-dai = <&q6afedai TX_CODEC_DMA_TX_3>;
++		};
++
++		codec {
++			sound-dai = <&wcd9375 1>, <&swr1 0>, <&lpass_tx_macro 0>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++	};
++};
++
+ &spi13 {
+ 	status = "okay";
+ 
+@@ -1285,6 +1421,39 @@ touchscreen@0 {
+ 	};
+ };
+ 
++&swr0 {
++	status = "okay";
++
++	wcd937x_rx: codec@0,4 {
++		compatible = "sdw20217010a00";
++		reg = <0 4>;
++
++		qcom,rx-port-mapping = <1 2 3 4 5>;
++		qcom,rx-channel-mapping = /bits/ 8 <1 2 1 1 2 1 1 2>;
++	};
++};
++
++&swr1 {
++	status = "okay";
++
++	wcd937x_tx: codec@0,3 {
++		compatible = "sdw20217010a00";
++		reg = <0 3>;
++
++		/*
++		 * WCD9375 TX Port 1 (ADC1)               <=> SWR2 Port 1
++		 * WCD9375 TX Port 2 (ADC2, 3)            <=> SWR2 Port 2
++		 * WCD9375 TX Port 3 (DMIC0,1,2,3 & MBHC) <=> SWR2 Port 2
++		 * WCD9375 TX Port 4 (DMIC4,5,6,7)        <=> SWR2 Port 3
++		 *
++		 * Downstream actually maps DMIC0 to TX1 but DMIC1/MBHC to TX2.
++		 * DMICs are unused though, so we configure the port to match MBHC.
++		 */
++		qcom,tx-port-mapping = <1 2 2 3>;
++		qcom,tx-channel-mapping = /bits/ 8 <1 1 2 4 1 2 3 4 1 2 3 4>;
++	};
++};
++
+ &tlmm {
+ 	gpio-line-names = "NC", /* GPIO_0 */
+ 			  "NC",
+@@ -1553,6 +1722,19 @@ ts_int_n: ts-int-n-state {
+ 		bias-pull-up;
+ 	};
+ 
++	wcd_reset_n: wcd-reset-n-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <8>;
++	};
++
++	wcd_reset_n_sleep: wcd-reset-n-sleep-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-disable;
++	};
++
+ 	bt_en: bt-en-state {
+ 		pins = "gpio85";
+ 		function = "gpio";
+@@ -1655,3 +1837,10 @@ &wifi {
+ 
+ 	status = "okay";
+ };
++
++// TODO: Figure out TX macro versions
++// See https://lore.kernel.org/linux-arm-msm/20260526-sc7280-tx-macro-v1-0-1aad6900fec0@fairphone.com/t/
++&lpass_tx_macro {
++	compatible = "qcom,sm7325-lpass-tx-macro",
++		     "qcom,sm8450-lpass-tx-macro"; // txmacro = v9.2
++};
+-- 
+2.55.0
+

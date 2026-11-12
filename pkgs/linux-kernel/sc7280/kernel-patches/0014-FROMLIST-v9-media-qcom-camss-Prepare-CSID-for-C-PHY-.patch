@@ -1,0 +1,77 @@
+From e06e87e3ba25ffb1d5bc333fe8adc0ff4788a65c Mon Sep 17 00:00:00 2001
+From: David Heidelberg <david@ixit.cz>
+Date: Wed, 29 Jul 2026 22:19:59 +0200
+Subject: [PATCH 014/136] FROMLIST v9 media: qcom: camss: Prepare CSID for
+ C-PHY support
+
+Inherit C-PHY information from CSIPHY, so we can configure CSID
+properly.
+
+CSI2_RX_CFG0_PHY_TYPE_SEL must be set to 1, when C-PHY mode is used.
+
+Reviewed-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Acked-by: Cory Keitz <ckeitz@amazon.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: David Heidelberg <david@ixit.cz>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/media/platform/qcom/camss/camss-csid-gen2.c | 1 +
+ drivers/media/platform/qcom/camss/camss-csid.c      | 5 +++++
+ drivers/media/platform/qcom/camss/camss-csid.h      | 6 ++++++
+ 3 files changed, 12 insertions(+)
+
+diff --git a/drivers/media/platform/qcom/camss/camss-csid-gen2.c b/drivers/media/platform/qcom/camss/camss-csid-gen2.c
+index eadcb2f7e3aa..a5b406cc8ead 100644
+--- a/drivers/media/platform/qcom/camss/camss-csid-gen2.c
++++ b/drivers/media/platform/qcom/camss/camss-csid-gen2.c
+@@ -183,6 +183,7 @@ static void __csid_configure_rx(struct csid_device *csid,
+ 	val = (lane_cnt - 1) << CSI2_RX_CFG0_NUM_ACTIVE_LANES;
+ 	val |= phy->lane_assign << CSI2_RX_CFG0_DL0_INPUT_SEL;
+ 	val |= phy->csiphy_id << CSI2_RX_CFG0_PHY_NUM_SEL;
++	val |= csid->phy.phy_sel << CSI2_RX_CFG0_PHY_TYPE_SEL;
+ 	writel_relaxed(val, csid->base + CSID_CSI2_RX_CFG0);
+ 
+ 	val = 1 << CSI2_RX_CFG1_PACKET_ECC_CORRECTION_EN;
+diff --git a/drivers/media/platform/qcom/camss/camss-csid.c b/drivers/media/platform/qcom/camss/camss-csid.c
+index 48459b46a981..bcc34ac9dd21 100644
+--- a/drivers/media/platform/qcom/camss/camss-csid.c
++++ b/drivers/media/platform/qcom/camss/camss-csid.c
+@@ -1291,6 +1291,11 @@ static int csid_link_setup(struct media_entity *entity,
+ 
+ 			lane_cfg = &csiphy->cfg.csi2->lane_cfg;
+ 			csid->phy.lane_cnt = lane_cfg->num_data;
++			if (lane_cfg->phy_cfg == V4L2_MBUS_CSI2_CPHY)
++				csid->phy.phy_sel = CSID_PHY_SEL_CPHY;
++			else
++				csid->phy.phy_sel = CSID_PHY_SEL_DPHY;
++
+ 			csid->phy.lane_assign = csid_get_lane_assign(lane_cfg, lane_cfg->num_data);
+ 			csid->tpg_linked = false;
+ 		}
+diff --git a/drivers/media/platform/qcom/camss/camss-csid.h b/drivers/media/platform/qcom/camss/camss-csid.h
+index 5296b10f6bac..e65590b0df69 100644
+--- a/drivers/media/platform/qcom/camss/camss-csid.h
++++ b/drivers/media/platform/qcom/camss/camss-csid.h
+@@ -44,6 +44,11 @@ enum csid_testgen_mode {
+ 	CSID_PAYLOAD_MODE_NUM_SUPPORTED_GEN2 = 9, /* excluding disabled */
+ };
+ 
++enum csid_phy_sel {
++	CSID_PHY_SEL_DPHY = 0,
++	CSID_PHY_SEL_CPHY = 1
++};
++
+ struct csid_format_info {
+ 	u32 code;
+ 	u8 data_type;
+@@ -70,6 +75,7 @@ struct csid_phy_config {
+ 	u32 lane_assign;
+ 	u32 en_vc;
+ 	u8 need_vc_update;
++	enum csid_phy_sel phy_sel;
+ };
+ 
+ struct csid_device;
+-- 
+2.55.0
+

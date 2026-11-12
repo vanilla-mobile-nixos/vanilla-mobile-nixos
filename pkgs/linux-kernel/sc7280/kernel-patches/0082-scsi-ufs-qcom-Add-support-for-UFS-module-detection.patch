@@ -1,0 +1,46 @@
+From 1ff01b3bab4313f568f20c64edb42be071bc32b9 Mon Sep 17 00:00:00 2001
+From: Xilin Wu <sophon@radxa.com>
+Date: Fri, 25 Jul 2025 12:49:28 +0800
+Subject: [PATCH 082/136] scsi: ufs: qcom: Add support for UFS module detection
+
+Signed-off-by: Xilin Wu <sophon@radxa.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/ufs/host/ufs-qcom.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/ufs/host/ufs-qcom.c b/drivers/ufs/host/ufs-qcom.c
+index 954be9343f42..dad6dd49adaf 100644
+--- a/drivers/ufs/host/ufs-qcom.c
++++ b/drivers/ufs/host/ufs-qcom.c
+@@ -2969,6 +2969,7 @@ static int ufs_qcom_probe(struct platform_device *pdev)
+ {
+ 	int err;
+ 	struct device *dev = &pdev->dev;
++	struct gpio_desc *cd_gpio;
+ 	const struct ufs_hba_variant_ops *vops;
+ 	const struct ufs_qcom_drvdata *drvdata = device_get_match_data(dev);
+ 
+@@ -2977,6 +2978,19 @@ static int ufs_qcom_probe(struct platform_device *pdev)
+ 	else
+ 		vops = &ufs_hba_qcom_vops;
+ 
++	cd_gpio = devm_gpiod_get_optional(dev, "cd", GPIOD_IN);
++	if (IS_ERR(cd_gpio)) {
++		return dev_err_probe(dev, PTR_ERR(cd_gpio),
++				     "failed to get card-detect GPIO\n");
++	}
++
++	if (cd_gpio) {
++		if (!gpiod_get_value(cd_gpio)) {
++			dev_warn(dev, "UFS module not present, returning -ENODEV\n");
++			return -ENODEV;
++		}
++	}
++
+ 	/* Perform generic probe */
+ 	err = ufshcd_pltfrm_init(pdev, vops);
+ 	if (err)
+-- 
+2.55.0
+

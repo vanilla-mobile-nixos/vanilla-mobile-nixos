@@ -1,0 +1,44 @@
+From 69b296160506da4bad3b3af4243d003bcbfc1ae8 Mon Sep 17 00:00:00 2001
+From: Stanislav Zaikin <zstaseg@gmail.com>
+Date: Sun, 13 Jul 2025 15:55:53 +0200
+Subject: [PATCH 078/136] sound: codecs: tfa9872: pass channel index
+
+Signed-off-by: Stanislav Zaikin <zstaseg@gmail.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ sound/soc/codecs/tfa9872.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/tfa9872.c b/sound/soc/codecs/tfa9872.c
+index 94eebe873e33..186c3d02ae3c 100644
+--- a/sound/soc/codecs/tfa9872.c
++++ b/sound/soc/codecs/tfa9872.c
+@@ -221,6 +221,7 @@ static int tfa987x_i2c_probe(struct i2c_client *i2c)
+ 	struct device *dev = &i2c->dev;
+ 	struct regmap *rmap;
+ 	unsigned int rev;
++	u32 channel_index = 0;
+ 	int ret;
+ 
+ 	rmap = devm_regmap_init_i2c(i2c, &tfa987x_regmap_config);
+@@ -246,6 +247,8 @@ static int tfa987x_i2c_probe(struct i2c_client *i2c)
+ 			return -ENODEV;
+ 	}
+ 
++	of_property_read_u32(dev->of_node, "sound-channel", &channel_index);
++
+ 	/* Perform soft reset */
+ 	regmap_write(rmap, TFA987X_SYS_CTRL0, TFA987X_SYS_CTRL0_I2CR_MSK);
+ 
+@@ -280,7 +283,7 @@ static int tfa987x_i2c_probe(struct i2c_client *i2c)
+ 				 TFA987X_TDM_CFG3_SPKE_MSK);
+ 	regmap_update_bits(rmap, TFA987X_TDM_CFG6,
+ 				 TFA987X_TDM_CFG6_SPKS_MSK,
+-				 FIELD_PREP(TFA987X_TDM_CFG6_SPKS_MSK, 0));
++				 FIELD_PREP(TFA987X_TDM_CFG6_SPKS_MSK, channel_index));
+ 
+ 	if ((rev & 0xff) == 0x72)
+ 		regmap_update_bits(rmap, TFA987X_MODE1_DET1,
+-- 
+2.55.0
+

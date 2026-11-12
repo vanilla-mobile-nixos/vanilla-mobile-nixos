@@ -1,0 +1,222 @@
+From e4a7d224c70f2025c653d8775ba172e1ec546d2b Mon Sep 17 00:00:00 2001
+From: Kurt Morris <kurt.morris@me.com>
+Date: Tue, 6 Oct 2026 19:02:47 -0700
+Subject: [PATCH 064/136] arm64: dts: qcom: sm7325-nothing-spacewar: Add
+ WCD9385 microphone capture
+
+The Nothing Phone (1) has a WCD9385 codec on the RX and TX SoundWire
+buses for its analog microphones. Add the codec, enable the LPASS RX, TX
+and VA macros and both SoundWire controllers, and add a capture
+dai-link from the TX macro to TX_CODEC_DMA_TX_3, with the routing from
+AMIC1-4 through the codec ADCs to the TX macro inputs.
+
+There are no DMICs on this board, so the VA macro only provides the
+fsgen clock to the other macros.
+
+Like on the Fairphone 5, the TX macro is overridden to the SM8450 layout,
+pending a decision on how to tell the SC7280-family TX macro versions
+apart.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Kurt Morris <kurt.morris@me.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../boot/dts/qcom/sm7325-nothing-spacewar.dts | 140 ++++++++++++++++++
+ 1 file changed, 140 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+index e45242c86cd1..60ce8461cd33 100644
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -36,6 +36,36 @@ aliases {
+ 		wifi0 = &wifi;
+ 	};
+ 
++	wcd9385: audio-codec {
++		compatible = "qcom,wcd9385-codec";
++
++		pinctrl-0 = <&wcd_reset_n>;
++		pinctrl-1 = <&wcd_reset_n_sleep>;
++		pinctrl-names = "default", "sleep";
++
++		reset-gpios = <&tlmm 83 GPIO_ACTIVE_LOW>;
++
++		vdd-rxtx-supply = <&vreg_l18b_1p8>;
++		vdd-io-supply = <&vreg_l18b_1p8>;
++		vdd-buck-supply = <&vreg_l17b_1p8>;
++		vdd-mic-bias-supply = <&vreg_bob>;
++
++		qcom,micbias1-microvolt = <1800000>;
++		qcom,micbias2-microvolt = <1800000>;
++		qcom,micbias3-microvolt = <1800000>;
++		qcom,micbias4-microvolt = <1800000>;
++
++		qcom,mbhc-buttons-vthreshold-microvolt = <75000 150000 237000 500000 500000
++							  500000 500000 500000>;
++		qcom,mbhc-headset-vthreshold-microvolt = <1700000>;
++		qcom,mbhc-headphone-vthreshold-microvolt = <50000>;
++
++		qcom,rx-device = <&wcd_rx>;
++		qcom,tx-device = <&wcd_tx>;
++
++		#sound-dai-cells = <1>;
++	};
++
+ 	chosen {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+@@ -1082,6 +1112,54 @@ &lpass_audiocc {
+ 	/delete-property/ power-domains;
+ };
+ 
++&lpass_rx_macro {
++	status = "okay";
++};
++
++&lpass_rx_swr_clk {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-disable;
++};
++
++&lpass_rx_swr_data {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-bus-hold;
++};
++
++&lpass_tx_macro {
++	/*
++	 * TODO: Figure out TX macro versions, see
++	 * https://lore.kernel.org/linux-arm-msm/20260526-sc7280-tx-macro-v1-0-1aad6900fec0@fairphone.com/t/
++	 */
++	compatible = "qcom,sm7325-lpass-tx-macro",
++		     "qcom,sm8450-lpass-tx-macro";
++
++	status = "okay";
++};
++
++&lpass_tx_swr_clk {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-disable;
++};
++
++&lpass_tx_swr_data {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-bus-hold;
++};
++
++&lpass_va_macro {
++	vdd-micb-supply = <&vreg_bob>;
++
++	/* No DMIC used on Nothing Phone (1) */
++	qcom,dmic-sample-rate = <4800000>;
++
++	status = "okay";
++};
++
+ &mdss {
+ 	status = "okay";
+ };
+@@ -1323,6 +1401,10 @@ dai@16 {
+ 		reg = <PRIMARY_MI2S_RX>;
+ 		qcom,sd-lines = <1>;
+ 	};
++
++	dai@120 {
++		reg = <TX_CODEC_DMA_TX_3>;
++	};
+ };
+ 
+ &qfprom {
+@@ -1379,6 +1461,15 @@ &sound {
+ 	pinctrl-names = "default",
+ 			"sleep";
+ 
++	audio-routing = "AMIC1", "MIC BIAS1",
++			"AMIC2", "MIC BIAS2",
++			"AMIC3", "MIC BIAS1",
++			"AMIC4", "MIC BIAS3",
++			"TX SWR_INPUT0", "ADC1_OUTPUT",
++			"TX SWR_INPUT1", "ADC2_OUTPUT",
++			"TX SWR_INPUT4", "ADC3_OUTPUT",
++			"TX SWR_INPUT5", "ADC4_OUTPUT";
++
+ 	mm1-dai-link {
+ 		link-name = "MultiMedia1";
+ 
+@@ -1402,6 +1493,22 @@ platform {
+ 			sound-dai = <&q6routing>;
+ 		};
+ 	};
++
++	wcd-capture-dai-link {
++		link-name = "WCD Capture";
++
++		codec {
++			sound-dai = <&wcd9385 1>, <&swr1 0>, <&lpass_tx_macro 0>;
++		};
++
++		cpu {
++			sound-dai = <&q6afedai TX_CODEC_DMA_TX_3>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++	};
+ };
+ 
+ &spi13 {
+@@ -1440,6 +1547,26 @@ focaltech@0 {
+ 	};
+ };
+ 
++&swr0 {
++	status = "okay";
++
++	wcd_rx: codec@0,4 {
++		compatible = "sdw20217010d00";
++		reg = <0 4>;
++		qcom,rx-port-mapping = <1 2 3 4 5>;
++	};
++};
++
++&swr1 {
++	status = "okay";
++
++	wcd_tx: codec@0,3 {
++		compatible = "sdw20217010d00";
++		reg = <0 3>;
++		qcom,tx-port-mapping = <1 2 3 4>;
++	};
++};
++
+ &tlmm {
+ 	/* 56-59: Fingerprint reader (SPI) */
+ 	gpio-reserved-ranges = <56 4>;
+@@ -1589,6 +1716,19 @@ ts_reset_n: ts-reset-n-state {
+ 		drive-strength = <8>;
+ 		bias-pull-up;
+ 	};
++
++	wcd_reset_n: wcd-reset-n-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <16>;
++	};
++
++	wcd_reset_n_sleep: wcd-reset-n-sleep-state {
++		pins = "gpio83";
++		function = "gpio";
++		drive-strength = <16>;
++		bias-disable;
++	};
+ };
+ 
+ &uart5 {
+-- 
+2.55.0
+

@@ -1,0 +1,119 @@
+From aac94bc0accddc1f560cacc6cb9644d4a621e82c Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Tue, 30 Jun 2026 10:11:41 +0200
+Subject: [PATCH 061/136] Input: focaltech_touch: fix up for v7.1
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../focaltech_touch/focaltech_core.c          | 31 ++++++-------------
+ .../focaltech_touch/focaltech_core.h          |  2 +-
+ 2 files changed, 10 insertions(+), 23 deletions(-)
+
+diff --git a/drivers/input/touchscreen/focaltech_touch/focaltech_core.c b/drivers/input/touchscreen/focaltech_touch/focaltech_core.c
+index 60d304f5dd59..ffdd8d5c9365 100644
+--- a/drivers/input/touchscreen/focaltech_touch/focaltech_core.c
++++ b/drivers/input/touchscreen/focaltech_touch/focaltech_core.c
+@@ -17,7 +17,6 @@
+ #include <linux/init.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+-#include <linux/of_gpio.h>
+ #include <linux/of_irq.h>
+ #include <linux/notifier.h>
+ #include <linux/fb.h>
+@@ -781,7 +780,7 @@ static int fts_irq_registration(struct fts_ts_data *ts_data)
+ 	int ret = 0;
+ 	struct fts_ts_platform_data *pdata = ts_data->pdata;
+ 
+-	ts_data->irq = gpio_to_irq(pdata->irq_gpio);
++	ts_data->irq = gpiod_to_irq(pdata->irq_gpio);
+ 	pdata->irq_gpio_flags = IRQF_TRIGGER_FALLING | IRQF_ONESHOT;
+ 	dev_info(ts_data->dev, "irq:%d, flag:%x", ts_data->irq,
+ 		 pdata->irq_gpio_flags);
+@@ -901,14 +900,8 @@ static int fts_gpio_configure(struct fts_ts_data *data)
+ 	int ret = 0;
+ 
+ 	/* request irq gpio */
+-	if (gpio_is_valid(data->pdata->irq_gpio)) {
+-		ret = gpio_request(data->pdata->irq_gpio, "fts_irq_gpio");
+-		if (ret) {
+-			dev_err(data->dev, "[GPIO]irq gpio request failed");
+-			goto err_irq_gpio_req;
+-		}
+-
+-		ret = gpio_direction_input(data->pdata->irq_gpio);
++	if (data->pdata->irq_gpio) {
++		ret = gpiod_direction_input(data->pdata->irq_gpio);
+ 		if (ret) {
+ 			dev_err(data->dev,
+ 				"[GPIO]set_direction for irq gpio failed");
+@@ -919,9 +912,6 @@ static int fts_gpio_configure(struct fts_ts_data *data)
+ 	return 0;
+ 
+ err_irq_gpio_dir:
+-	if (gpio_is_valid(data->pdata->irq_gpio))
+-		gpio_free(data->pdata->irq_gpio);
+-err_irq_gpio_req:
+ 	return ret;
+ }
+ 
+@@ -1013,9 +1003,11 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
+ 			 pdata->key_y_coords[2]);
+ 	}
+ 
+-	pdata->irq_gpio = of_get_named_gpio(np, "focaltech,irq-gpio", 0);
+-	if (pdata->irq_gpio < 0)
++	pdata->irq_gpio = devm_gpiod_get(dev, "focaltech,irq", GPIOD_ASIS);
++	if (IS_ERR(pdata->irq_gpio)) {
+ 		dev_err(dev, "Unable to get irq_gpio");
++		pdata->irq_gpio = NULL;
++	}
+ 
+ 	ret = of_property_read_u32(np, "focaltech,max-touch-number", &temp_val);
+ 	if (ret < 0) {
+@@ -1032,8 +1024,8 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
+ 			pdata->max_touch_number = temp_val;
+ 	}
+ 
+-	dev_info(dev, "max touch number:%d, irq gpio:%d",
+-		 pdata->max_touch_number, pdata->irq_gpio);
++	dev_info(dev, "max touch number:%d",
++		 pdata->max_touch_number);
+ 
+ 	return 0;
+ }
+@@ -1240,8 +1232,6 @@ static int fts_ts_probe(struct spi_device *spi)
+ 	return 0;
+ 
+ err_irq_req:
+-	if (gpio_is_valid(ts_data->pdata->irq_gpio))
+-		gpio_free(ts_data->pdata->irq_gpio);
+ err_buffer_init:
+ 	input_unregister_device(ts_data->input_dev);
+ err_input_init:
+@@ -1271,9 +1261,6 @@ static void fts_ts_remove(struct spi_device *spi)
+ 	if (fts_data->ts_workqueue)
+ 		destroy_workqueue(fts_data->ts_workqueue);
+ 
+-	if (gpio_is_valid(fts_data->pdata->irq_gpio))
+-		gpio_free(fts_data->pdata->irq_gpio);
+-
+ 	fts_power_off(fts_data);
+ }
+ 
+diff --git a/drivers/input/touchscreen/focaltech_touch/focaltech_core.h b/drivers/input/touchscreen/focaltech_touch/focaltech_core.h
+index 70a8d8179c86..baed44662552 100644
+--- a/drivers/input/touchscreen/focaltech_touch/focaltech_core.h
++++ b/drivers/input/touchscreen/focaltech_touch/focaltech_core.h
+@@ -93,7 +93,7 @@ struct ftxxxx_proc {
+ };
+ 
+ struct fts_ts_platform_data {
+-	u32 irq_gpio;
++	struct gpio_desc *irq_gpio;
+ 	u32 irq_gpio_flags;
+ 	bool have_key;
+ 	u32 key_number;
+-- 
+2.55.0
+

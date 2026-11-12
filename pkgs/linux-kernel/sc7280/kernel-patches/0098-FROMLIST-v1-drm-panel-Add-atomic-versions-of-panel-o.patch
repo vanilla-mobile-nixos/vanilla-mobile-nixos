@@ -1,0 +1,407 @@
+From f3c51398f7d9d04f0a063cf62440a381bdd92f1d Mon Sep 17 00:00:00 2001
+From: Val Packett <val@packett.cool>
+Date: Fri, 24 Apr 2026 20:49:50 -0300
+Subject: [PATCH 098/136] FROMLIST v1 drm/panel: Add atomic versions of panel
+ ops
+
+Modern DSI panels support various modes (resolutions and refresh rates),
+which usually requires sending mode-specific DCS commands to configure the
+DDIC during operations like prepare(). However existing drm_panel_funcs
+only take the panel itself as an argument, so there's no way to access
+relevant state (such as the mode being set) inside of these functions.
+
+To allow panel drivers access to the state, introduce new atomic_*
+versions of the prepare/enable/disable/unprepare ops, and make the
+corresponding drm_panel_* functions call them if available, falling back
+to the original ops otherwise. To avoid the need to modify all consumers
+at once, the original single-argument drm_panel_* functions are redefined
+as aliases to the new ones, passing NULLs for the new extra arguments.
+
+The atomic ops pass the CRTC as well as the atomic state because getting
+the mode being set is part of per-CRTC state.
+
+Signed-off-by: Val Packett <val@packett.cool>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/gpu/drm/drm_panel.c |  88 +++++++++++++++--------
+ include/drm/drm_panel.h     | 137 ++++++++++++++++++++++++++++++++++--
+ 2 files changed, 193 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/gpu/drm/drm_panel.c b/drivers/gpu/drm/drm_panel.c
+index f8f6082e637f..8a1b0f508d86 100644
+--- a/drivers/gpu/drm/drm_panel.c
++++ b/drivers/gpu/drm/drm_panel.c
+@@ -129,16 +129,20 @@ int devm_drm_panel_add(struct device *dev, struct drm_panel *panel)
+ EXPORT_SYMBOL(devm_drm_panel_add);
+ 
+ /**
+- * drm_panel_prepare - power on a panel
++ * drm_panel_atomic_prepare - power on a panel
+  * @panel: DRM panel
++ * @crtc: the CRTC used to drive the panel, may be NULL
++ * @state: current atomic commit state, may be NULL
+  *
+  * Calling this function will enable power and deassert any reset signals to
+  * the panel. After this has completed it is possible to communicate with any
+  * integrated circuitry via a command bus. This function cannot fail (as it is
+  * called from the pre_enable call chain). There will always be a call to
+- * drm_panel_disable() afterwards.
++ * drm_panel_atomic_disable() afterwards.
+  */
+-void drm_panel_prepare(struct drm_panel *panel)
++void drm_panel_atomic_prepare(struct drm_panel *panel,
++			      struct drm_crtc *crtc,
++			      struct drm_atomic_commit *state)
+ {
+ 	struct drm_panel_follower *follower;
+ 	int ret;
+@@ -153,11 +157,15 @@ void drm_panel_prepare(struct drm_panel *panel)
+ 
+ 	mutex_lock(&panel->follower_lock);
+ 
+-	if (panel->funcs && panel->funcs->prepare) {
++	if (panel->funcs && panel->funcs->atomic_prepare) {
++		ret = panel->funcs->atomic_prepare(panel, crtc, state);
++	} else if (panel->funcs && panel->funcs->prepare) {
+ 		ret = panel->funcs->prepare(panel);
+-		if (ret < 0)
+-			goto exit;
++	} else {
++		ret = 0;
+ 	}
++	if (ret < 0)
++		goto exit;
+ 	panel->prepared = true;
+ 
+ 	list_for_each_entry(follower, &panel->followers, list) {
+@@ -173,18 +181,22 @@ void drm_panel_prepare(struct drm_panel *panel)
+ exit:
+ 	mutex_unlock(&panel->follower_lock);
+ }
+-EXPORT_SYMBOL(drm_panel_prepare);
++EXPORT_SYMBOL(drm_panel_atomic_prepare);
+ 
+ /**
+- * drm_panel_unprepare - power off a panel
++ * drm_panel_atomic_unprepare - power off a panel
+  * @panel: DRM panel
++ * @crtc: the CRTC used to drive the panel, may be NULL
++ * @state: current atomic commit state, may be NULL
+  *
+  * Calling this function will completely power off a panel (assert the panel's
+  * reset, turn off power supplies, ...). After this function has completed, it
+  * is usually no longer possible to communicate with the panel until another
+- * call to drm_panel_prepare().
++ * call to drm_panel_atomic_prepare().
+  */
+-void drm_panel_unprepare(struct drm_panel *panel)
++void drm_panel_atomic_unprepare(struct drm_panel *panel,
++				struct drm_crtc *crtc,
++				struct drm_atomic_commit *state)
+ {
+ 	struct drm_panel_follower *follower;
+ 	int ret;
+@@ -218,29 +230,37 @@ void drm_panel_unprepare(struct drm_panel *panel)
+ 				 follower->funcs->panel_unpreparing, ret);
+ 	}
+ 
+-	if (panel->funcs && panel->funcs->unprepare) {
++	if (panel->funcs && panel->funcs->atomic_unprepare) {
++		ret = panel->funcs->atomic_unprepare(panel, crtc, state);
++	} else if (panel->funcs && panel->funcs->unprepare) {
+ 		ret = panel->funcs->unprepare(panel);
+-		if (ret < 0)
+-			goto exit;
++	} else {
++		ret = 0;
+ 	}
++	if (ret < 0)
++		goto exit;
+ 	panel->prepared = false;
+ 
+ exit:
+ 	mutex_unlock(&panel->follower_lock);
+ }
+-EXPORT_SYMBOL(drm_panel_unprepare);
++EXPORT_SYMBOL(drm_panel_atomic_unprepare);
+ 
+ /**
+- * drm_panel_enable - enable a panel
++ * drm_panel_atomic_enable - enable a panel
+  * @panel: DRM panel
++ * @crtc: the CRTC used to drive the panel, may be NULL
++ * @state: current atomic commit state, may be NULL
+  *
+  * Calling this function will cause the panel display drivers to be turned on
+  * and the backlight to be enabled. Content will be visible on screen after
+  * this call completes. This function cannot fail (as it is called from the
+- * enable call chain). There will always be a call to drm_panel_disable()
+- * afterwards.
++ * enable call chain). There will always be a call to
++ * drm_panel_atomic_disable() afterwards.
+  */
+-void drm_panel_enable(struct drm_panel *panel)
++void drm_panel_atomic_enable(struct drm_panel *panel,
++			     struct drm_crtc *crtc,
++			     struct drm_atomic_commit *state)
+ {
+ 	struct drm_panel_follower *follower;
+ 	int ret;
+@@ -255,11 +275,15 @@ void drm_panel_enable(struct drm_panel *panel)
+ 
+ 	mutex_lock(&panel->follower_lock);
+ 
+-	if (panel->funcs && panel->funcs->enable) {
++	if (panel->funcs && panel->funcs->atomic_enable) {
++		ret = panel->funcs->atomic_enable(panel, crtc, state);
++	} else if (panel->funcs && panel->funcs->enable) {
+ 		ret = panel->funcs->enable(panel);
+-		if (ret < 0)
+-			goto exit;
++	} else {
++		ret = 0;
+ 	}
++	if (ret < 0)
++		goto exit;
+ 	panel->enabled = true;
+ 
+ 	ret = backlight_enable(panel->backlight);
+@@ -280,17 +304,21 @@ void drm_panel_enable(struct drm_panel *panel)
+ exit:
+ 	mutex_unlock(&panel->follower_lock);
+ }
+-EXPORT_SYMBOL(drm_panel_enable);
++EXPORT_SYMBOL(drm_panel_atomic_enable);
+ 
+ /**
+- * drm_panel_disable - disable a panel
++ * drm_panel_atomic_disable - disable a panel
+  * @panel: DRM panel
++ * @crtc: the CRTC used to drive the panel, may be NULL
++ * @state: current atomic commit state, may be NULL
+  *
+  * This will typically turn off the panel's backlight or disable the display
+  * drivers. For smart panels it should still be possible to communicate with
+  * the integrated circuitry via any command bus after this call.
+  */
+-void drm_panel_disable(struct drm_panel *panel)
++void drm_panel_atomic_disable(struct drm_panel *panel,
++			      struct drm_crtc *crtc,
++			      struct drm_atomic_commit *state)
+ {
+ 	struct drm_panel_follower *follower;
+ 	int ret;
+@@ -329,17 +357,21 @@ void drm_panel_disable(struct drm_panel *panel)
+ 		DRM_DEV_INFO(panel->dev, "failed to disable backlight: %d\n",
+ 			     ret);
+ 
+-	if (panel->funcs && panel->funcs->disable) {
++	if (panel->funcs && panel->funcs->atomic_disable) {
++		ret = panel->funcs->atomic_disable(panel, crtc, state);
++	} else if (panel->funcs && panel->funcs->disable) {
+ 		ret = panel->funcs->disable(panel);
+-		if (ret < 0)
+-			goto exit;
++	} else {
++		ret = 0;
+ 	}
++	if (ret < 0)
++		goto exit;
+ 	panel->enabled = false;
+ 
+ exit:
+ 	mutex_unlock(&panel->follower_lock);
+ }
+-EXPORT_SYMBOL(drm_panel_disable);
++EXPORT_SYMBOL(drm_panel_atomic_disable);
+ 
+ /**
+  * drm_panel_get_modes - probe the available display modes of a panel
+diff --git a/include/drm/drm_panel.h b/include/drm/drm_panel.h
+index b87323443f49..da0356677303 100644
+--- a/include/drm/drm_panel.h
++++ b/include/drm/drm_panel.h
+@@ -33,7 +33,9 @@
+ struct backlight_device;
+ struct dentry;
+ struct device_node;
++struct drm_atomic_commit;
+ struct drm_connector;
++struct drm_crtc;
+ struct drm_panel_follower;
+ struct drm_panel;
+ struct display_timing;
+@@ -80,6 +82,19 @@ struct drm_panel_funcs {
+ 	 */
+ 	int (*prepare)(struct drm_panel *panel);
+ 
++	/**
++	 * @atomic_prepare:
++	 *
++	 * Turn on panel and perform setup with access to atomic commit state.
++	 * Consumers will prefer this function over @prepare if both are provided.
++	 * The state may be NULL due to the caller not being aware of it.
++	 *
++	 * This function is optional.
++	 */
++	int (*atomic_prepare)(struct drm_panel *panel,
++			      struct drm_crtc *crtc,
++			      struct drm_atomic_commit *state);
++
+ 	/**
+ 	 * @enable:
+ 	 *
+@@ -89,6 +104,19 @@ struct drm_panel_funcs {
+ 	 */
+ 	int (*enable)(struct drm_panel *panel);
+ 
++	/**
++	 * @atomic_enable:
++	 *
++	 * Enable panel (turn on backlight, etc.) with access to atomic commit state.
++	 * Consumers will prefer this function over @enable if both are provided.
++	 * The state may be NULL due to the caller not being aware of it.
++	 *
++	 * This function is optional.
++	 */
++	int (*atomic_enable)(struct drm_panel *panel,
++			     struct drm_crtc *crtc,
++			     struct drm_atomic_commit *state);
++
+ 	/**
+ 	 * @disable:
+ 	 *
+@@ -98,6 +126,19 @@ struct drm_panel_funcs {
+ 	 */
+ 	int (*disable)(struct drm_panel *panel);
+ 
++	/**
++	 * @atomic_disable:
++	 *
++	 * Disable panel (turn off backlight, etc.) with access to atomic commit state.
++	 * Consumers will prefer this function over @disable if both are provided.
++	 * The state may be NULL due to the caller not being aware of it.
++	 *
++	 * This function is optional.
++	 */
++	int (*atomic_disable)(struct drm_panel *panel,
++			      struct drm_crtc *crtc,
++			      struct drm_atomic_commit *state);
++
+ 	/**
+ 	 * @unprepare:
+ 	 *
+@@ -107,6 +148,19 @@ struct drm_panel_funcs {
+ 	 */
+ 	int (*unprepare)(struct drm_panel *panel);
+ 
++	/**
++	 * @atomic_unprepare:
++	 *
++	 * Turn off panel with access to atomic commit state.
++	 * Consumers will prefer this function over @unprepare if both are provided.
++	 * The state may be NULL due to the caller not being aware of it.
++	 *
++	 * This function is optional.
++	 */
++	int (*atomic_unprepare)(struct drm_panel *panel,
++			        struct drm_crtc *crtc,
++			        struct drm_atomic_commit *state);
++
+ 	/**
+ 	 * @get_modes:
+ 	 *
+@@ -327,11 +381,86 @@ void drm_panel_add(struct drm_panel *panel);
+ void drm_panel_remove(struct drm_panel *panel);
+ int devm_drm_panel_add(struct device *dev, struct drm_panel *panel);
+ 
+-void drm_panel_prepare(struct drm_panel *panel);
+-void drm_panel_unprepare(struct drm_panel *panel);
++void drm_panel_atomic_prepare(struct drm_panel *panel,
++			      struct drm_crtc *crtc,
++			      struct drm_atomic_commit *state);
++
++/**
++ * drm_panel_prepare - power on a panel
++ * @panel: DRM panel
++ *
++ * Calling this function will enable power and deassert any reset signals to
++ * the panel. After this has completed it is possible to communicate with any
++ * integrated circuitry via a command bus. This function cannot fail (as it is
++ * called from the pre_enable call chain). There will always be a call to
++ * drm_panel_disable() afterwards.
++ *
++ * If atomic commit state is available, call drm_panel_atomic_prepare instead.
++ */
++static inline void drm_panel_prepare(struct drm_panel *panel)
++{
++	drm_panel_atomic_prepare(panel, NULL, NULL);
++}
++
++void drm_panel_atomic_unprepare(struct drm_panel *panel,
++				struct drm_crtc *crtc,
++				struct drm_atomic_commit *state);
++
++/**
++ * drm_panel_unprepare - power off a panel
++ * @panel: DRM panel
++ *
++ * Calling this function will completely power off a panel (assert the panel's
++ * reset, turn off power supplies, ...). After this function has completed, it
++ * is usually no longer possible to communicate with the panel until another
++ * call to drm_panel_prepare().
++ *
++ * If atomic commit state is available, call drm_panel_atomic_unprepare instead.
++ */
++static inline void drm_panel_unprepare(struct drm_panel *panel)
++{
++	drm_panel_atomic_unprepare(panel, NULL, NULL);
++}
++
++void drm_panel_atomic_enable(struct drm_panel *panel,
++			     struct drm_crtc *crtc,
++			     struct drm_atomic_commit *state);
+ 
+-void drm_panel_enable(struct drm_panel *panel);
+-void drm_panel_disable(struct drm_panel *panel);
++/**
++ * drm_panel_enable - enable a panel
++ * @panel: DRM panel
++ *
++ * Calling this function will cause the panel display drivers to be turned on
++ * and the backlight to be enabled. Content will be visible on screen after
++ * this call completes. This function cannot fail (as it is called from the
++ * enable call chain). There will always be a call to drm_panel_disable()
++ * afterwards.
++ *
++ * If atomic commit state is available, call drm_panel_atomic_enable instead.
++ */
++static inline void drm_panel_enable(struct drm_panel *panel)
++{
++	drm_panel_atomic_enable(panel, NULL, NULL);
++}
++
++void drm_panel_atomic_disable(struct drm_panel *panel,
++			      struct drm_crtc *crtc,
++			      struct drm_atomic_commit *state);
++
++/**
++ * drm_panel_disable - disable a panel
++ * @panel: DRM panel
++ *
++ * This will typically turn off the panel's backlight or disable the display
++ * drivers. For smart panels it should still be possible to communicate with
++ * the integrated circuitry via any command bus after this call.
++ *
++ * If atomic commit state is available, call drm_panel_atomic_disable instead.
++ */
++static inline void drm_panel_disable(struct drm_panel *panel)
++{
++	drm_panel_atomic_disable(panel, NULL, NULL);
++}
+ 
+ int drm_panel_get_modes(struct drm_panel *panel, struct drm_connector *connector);
+ 
+-- 
+2.55.0
+

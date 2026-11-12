@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Marcus Ramberg <marcus@means.no>
+Date: Sun, 25 Oct 2026 17:53:24 +0100
+Subject: [PATCH 13/20] firmware: qcom: scm: allow QSEECOM on the Fairphone 5
+
+The Fairphone 5 (QCM6490) runs a QSEE that carries the fingerprint
+trusted application, so the machine needs to be on the QSEECOM
+allowlist for the TEE driver to bind.
+
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ drivers/firmware/qcom/qcom_scm.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/firmware/qcom/qcom_scm.c b/drivers/firmware/qcom/qcom_scm.c
+index c4c30fc983d6..80873a2660d3 100644
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -2678,6 +2678,7 @@ static const struct of_device_id qcom_scm_qseecom_allowlist[] __maybe_unused = {
+ 	{ .compatible = "dell,latitude-7455" },
+ 	{ .compatible = "dell,xps13-9345" },
+ 	{ .compatible = "ecs,liva-qc710" },
++	{ .compatible = "fairphone,fp5" },
+ 	{ .compatible = "honor,magicbook-art-14-snapdragon" },
+ 	{ .compatible = "hp,elitebook-ultra-g1q" },
+ 	{ .compatible = "hp,omnibook-x14" },

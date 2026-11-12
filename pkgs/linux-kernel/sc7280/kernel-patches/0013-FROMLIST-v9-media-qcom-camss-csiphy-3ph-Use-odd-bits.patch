@@ -1,0 +1,76 @@
+From 6c9b1321546a87248ac39aac8eb7396e268ad435 Mon Sep 17 00:00:00 2001
+From: David Heidelberg <david@ixit.cz>
+Date: Wed, 29 Jul 2026 22:19:58 +0200
+Subject: [PATCH 013/136] FROMLIST v9 media: qcom: camss: csiphy-3ph: Use odd
+ bits for configuring C-PHY lanes
+
+So far, only D-PHY mode was supported, which uses even bits when enabling
+or masking lanes. For C-PHY configuration, the hardware instead requires
+using the odd bits.
+
+Since there can be unrecognized configuration allow returning failure.
+
+Acked-by: Cory Keitz <ckeitz@amazon.com>
+Reviewed-by: Bryan O'Donoghue <bod@kernel.org>
+Signed-off-by: David Heidelberg <david@ixit.cz>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Marcus Ramberg <marcus@means.no>
+---
+ .../qcom/camss/camss-csiphy-3ph-1-0.c         | 25 ++++++++++++-------
+ 1 file changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
+index 7c8c0e41bc62..dfcd9ed2eb7a 100644
+--- a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
++++ b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
+@@ -14,6 +14,7 @@
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
++#include <linux/media-bus-format.h>
+ 
+ #define CSIPHY_3PH_LNn_CFG1(n)			(0x000 + 0x100 * (n))
+ #define CSIPHY_3PH_LNn_CFG1_SWI_REC_DLY_PRG	(BIT(7) | BIT(6))
+@@ -1113,13 +1114,22 @@ static void csiphy_gen2_config_lanes(struct csiphy_device *csiphy,
+ 
+ static u8 csiphy_get_lane_mask(struct csiphy_lanes_cfg *lane_cfg)
+ {
+-	u8 lane_mask;
+-	int i;
++	u8 lane_mask = 0;
++	u8 offset = 0;
+ 
+-	lane_mask = CSIPHY_3PH_CMN_CSI_COMMON_CTRL5_CLK_ENABLE;
++	switch (lane_cfg->phy_cfg) {
++	case V4L2_MBUS_CSI2_CPHY:
++		offset = 1;
++		break;
++	case V4L2_MBUS_CSI2_DPHY:
++		lane_mask = CSIPHY_3PH_CMN_CSI_COMMON_CTRL5_CLK_ENABLE;
++		break;
++	default:
++		break;
++	}
+ 
+-	for (i = 0; i < lane_cfg->num_data; i++)
+-		lane_mask |= BIT(lane_cfg->data[i].pos * 2);
++	for (int i = 0; i < lane_cfg->num_data; i++)
++		lane_mask |= BIT((lane_cfg->data[i].pos * 2) + offset);
+ 
+ 	return lane_mask;
+ }
+@@ -1160,10 +1170,7 @@ static void csiphy_lanes_enable(struct csiphy_device *csiphy,
+ 
+ 	settle_cnt = csiphy_settle_cnt_calc(link_freq, csiphy->timer_clk_rate);
+ 
+-	val = CSIPHY_3PH_CMN_CSI_COMMON_CTRL5_CLK_ENABLE;
+-	for (i = 0; i < c->num_data; i++)
+-		val |= BIT(c->data[i].pos * 2);
+-
++	val = csiphy_get_lane_mask(c);
+ 	writel_relaxed(val, csiphy->base +
+ 		       CSIPHY_3PH_CMN_CSI_COMMON_CTRLn(regs->offset, 5));
+ 
+-- 
+2.55.0
+

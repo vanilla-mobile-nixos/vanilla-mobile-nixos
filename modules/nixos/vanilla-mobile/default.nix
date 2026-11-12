@@ -63,6 +63,9 @@ in
       })
     ];
 
+    # Not via overlay: pipewire depends on modemmanager, so overlaying it rebuilds electron & co.
+    networking.modemmanager.package = lib.mkDefault self.packages.modemmanager;
+
     # Enable Modem Manager quick suspend and resume support. Without it,
     # Modem Manager will crash and not resume properly after a suspend.
     # See <https://gitlab.freedesktop.org/mobile-broadband/ModemManager/-/work_items/1039>
@@ -70,7 +73,7 @@ in
       lib.mkIf config.networking.modemmanager.enable
         [
           "" # Ignore original ExecStart.
-          "${pkgs.modemmanager}/bin/ModemManager --test-quick-suspend-resume"
+          "${config.networking.modemmanager.package}/bin/ModemManager --test-quick-suspend-resume"
         ];
 
     # People typically have single presses toggle the display/suspend, not a full poweroff.
