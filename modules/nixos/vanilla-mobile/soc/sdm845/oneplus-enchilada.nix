@@ -2,6 +2,7 @@ self:
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -26,13 +27,13 @@ in
 
     vanilla-mobile = {
       deviceInfo = {
-        name = "OnePlus 6";
-        codename = "oneplus-enchilada";
+        name = lib.mkDefault "OnePlus 6";
+        codename = lib.mkDefault "oneplus-enchilada";
         manufacturer = "OnePlus";
-        dtb = "qcom/sdm845-oneplus-enchilada.dtb";
+        dtb = lib.mkDefault "qcom/sdm845-oneplus-enchilada.dtb";
         imageSectorSize = 4096;
         firmware = self.packages.oneplus-sdm845-firmware;
-        uboot = self.packages.ubootPackages.oneplus-enchilada-boot-image;
+        uboot = lib.mkDefault self.packages.ubootPackages.oneplus-enchilada-boot-image;
       };
       soc.sdm845.enable = true;
     };
@@ -79,6 +80,17 @@ in
     services.q6voiced.settings = {
       q6voice_card = 0;
       q6voice_device = 6;
+    };
+
+    # Otherwise the bootloader eventually marks the A/B slot as unbootable.
+    systemd.services.qbootctl-mark-boot-successful = {
+      description = "Mark current A/B slot as successfully booted";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${lib.getExe pkgs.qbootctl} -m";
+      };
     };
   };
 

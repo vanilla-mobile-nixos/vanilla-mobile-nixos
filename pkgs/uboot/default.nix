@@ -52,4 +52,14 @@ in
   oneplus-enchilada-boot-image = mkAndroidBootImage {
     uboot = ubootPackages.oneplus-enchilada;
   };
+
+  oneplus-fajita = buildTauchgangUBoot {
+    pname = "oneplus-fajita";
+    dtb = "qcom/sdm845-oneplus-fajita";
+    defconfig = "qcom_defconfig qcom-phone.config";
+  };
+  oneplus-fajita-boot-image = mkAndroidBootImage {
+    uboot = ubootPackages.oneplus-fajita;
+  };
+
 }
