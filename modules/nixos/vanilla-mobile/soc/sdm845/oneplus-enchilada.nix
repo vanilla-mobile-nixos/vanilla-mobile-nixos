@@ -2,6 +2,7 @@ self:
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -79,6 +80,17 @@ in
     services.q6voiced.settings = {
       q6voice_card = 0;
       q6voice_device = 6;
+    };
+
+    # Otherwise the bootloader eventually marks the A/B slot as unbootable.
+    systemd.services.qbootctl-mark-boot-successful = {
+      description = "Mark current A/B slot as successfully booted";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${lib.getExe pkgs.qbootctl} -m";
+      };
     };
   };
 
